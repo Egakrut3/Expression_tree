@@ -2,7 +2,6 @@
 #include <stdarg.h>
 #include <string.h>
 
-#undef FINAL_CODE
 #define FINAL_CODE
 
 errno_t My_calloc(void **const dest, size_t const num, size_t const size) {
@@ -13,7 +12,7 @@ errno_t My_calloc(void **const dest, size_t const num, size_t const size) {
         return 0;
     }
 
-    void *ptr = calloc(num, size);
+    void *const ptr = calloc(num, size);
     if (!ptr) {
         return errno;
     }
@@ -25,7 +24,19 @@ errno_t My_calloc(void **const dest, size_t const num, size_t const size) {
 errno_t My_realloc(void **const dest, void *const prev_ptr, size_t const size) {
     assert(dest); assert(prev_ptr);
 
-    void *ptr = realloc(prev_ptr, size);
+    void *const ptr = realloc(prev_ptr, size);
+    if (!ptr) {
+        return errno;
+    }
+
+    *dest = ptr;
+    return 0;
+}
+
+errno_t My_strdup(char **const dest, char const *const src) {
+    assert(dest); assert(src);
+
+    char *const ptr = strdup(src);
     if (!ptr) {
         return errno;
     }
@@ -45,7 +56,7 @@ errno_t My_fread(void *__restrict const buffer, size_t const size, size_t const 
     return 0;
 }
 
-errno_t My_fwrite(const void *__restrict const buffer, size_t const size, size_t const num,
+errno_t My_fwrite(void const *__restrict const buffer, size_t const size, size_t const num,
                   FILE *__restrict const stream) {
     assert(buffer); assert(stream);
 
@@ -57,15 +68,16 @@ errno_t My_fwrite(const void *__restrict const buffer, size_t const size, size_t
     return 0;
 }
 
+#undef FINAL_CODE
+
 errno_t My_sscanf_s(size_t const count, char const *__restrict const buffer,
                     char const *__restrict const format, ...) {
     assert(buffer); assert(format);
 
     va_list args = nullptr;
     va_start(args, format);
-    #undef FINAL_CODE
     #define FINAL_CODE  \
-        va_end(args);
+    va_end(args);
 
     if (vsscanf_s(buffer, format, args) != (ssize_t)count) {
         CLEAR_RESOURCES();
@@ -74,6 +86,8 @@ errno_t My_sscanf_s(size_t const count, char const *__restrict const buffer,
 
     CLEAR_RESOURCES();
     return 0;
+
+    #undef FINAL_CODE
 }
 
 errno_t My_scanf_s(size_t const count, char const *__restrict const format, ...) {
@@ -81,9 +95,8 @@ errno_t My_scanf_s(size_t const count, char const *__restrict const format, ...)
 
     va_list args = nullptr;
     va_start(args, format);
-    #undef FINAL_CODE
     #define FINAL_CODE  \
-        va_end(args);
+    va_end(args);
 
     if (vscanf_s(format, args) != (ssize_t)count) {
         CLEAR_RESOURCES();
@@ -92,16 +105,6 @@ errno_t My_scanf_s(size_t const count, char const *__restrict const format, ...)
 
     CLEAR_RESOURCES();
     return 0;
-}
 
-errno_t My_strdup(char const **const dest, char const *const src) {
-    assert(dest); assert(src);
-
-    char *ptr = strdup(src);
-    if (!ptr) {
-        return errno;
-    }
-
-    *dest = ptr;
-    return 0;
+    #undef FINAL_CODE
 }

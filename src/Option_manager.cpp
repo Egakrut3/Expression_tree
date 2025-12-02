@@ -9,7 +9,6 @@ enum Option
     __OPTION_COUNT,
 };
 
-#undef FINAL_CODE
 #define FINAL_CODE
 
 static errno_t set_help_config(Config *const config_ptr,
@@ -83,3 +82,5 @@ errno_t Config_Dtor(Config *const config_ptr)
     config_ptr->is_valid = false;
     return 0;
 }
+
+#undef FINAL_CODE

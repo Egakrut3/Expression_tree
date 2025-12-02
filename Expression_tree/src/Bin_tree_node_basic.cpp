@@ -4,34 +4,45 @@
 
 errno_t Bin_tree_node_Ctor(Bin_tree_node *const node_ptr,
                            Bin_tree_node *const left, Bin_tree_node *const right,
-                           tree_elem_t const val, bool const need_copy) {
+                           expression_type const type, expression_val const val) {
     assert(node_ptr); assert(!node_ptr->is_valid);
 
-    node_ptr->left       = left;
-    node_ptr->right      = right;
-    node_ptr->need_copy  = need_copy;
-    if (node_ptr->need_copy) { TREE_ELEM_COPY(node_ptr->val, val); }
-    else                     { node_ptr->val = val; }
-    // in order to reuse memory of buffer we've read from file, I must distinguish node, that I must clear and not
-
+    node_ptr->left        = left;
+    node_ptr->right       = right;
+    node_ptr->type        = type;
+    node_ptr->val         = val;
     node_ptr->is_valid    = true;
     node_ptr->verify_used = false;
     return 0;
 }
 
+/*
 errno_t get_new_Bin_tree_node(Bin_tree_node **const dest,
                               Bin_tree_node *const left, Bin_tree_node *const right,
-                              tree_elem_t const val, bool const need_copy) {
+                              expression_type const type, expression_val const val) {
     CHECK_FUNC(My_calloc, (void **)dest, 1, sizeof(Bin_tree_node));
-    CHECK_FUNC(Bin_tree_node_Ctor, *dest, left, right, val, need_copy);
+    CHECK_FUNC(Bin_tree_node_Ctor, *dest, left, right, type, val);
 
     return 0;
+}
+*/
+
+Bin_tree_node *get_new_Bin_tree_node(Bin_tree_node *const left, Bin_tree_node *const right,
+                                     expression_type const type, expression_val const val,
+                                     errno_t *const err_ptr) {
+    assert(err_ptr);
+
+    Bin_tree_node *result = nullptr;
+    *err_ptr = My_calloc((void **)&result, 1, sizeof(Bin_tree_node));
+    *err_ptr = Bin_tree_node_Ctor(result, left, right, type, val);
+
+    return result;
 }
 
 errno_t Bin_tree_node_Dtor(Bin_tree_node *const node_ptr) {
     assert(node_ptr); assert(node_ptr->is_valid);
 
-    if (node_ptr->need_copy) { TREE_ELEM_DTOR(node_ptr->val); }
+    if (node_ptr->type == EXPRESSION_VARIABLE_TYPE) { free(node_ptr->val.name); }
 
     node_ptr->is_valid = false;
     return 0;
@@ -63,9 +74,7 @@ errno_t Bin_subtree_verify(Bin_tree_node *const node_ptr, errno_t *const err_ptr
 }
 
 static errno_t Bin_subtree_Dtor_uncheked(Bin_tree_node *const node_ptr) {
-    if (!node_ptr) {
-        return 0;
-    }
+    if (!node_ptr) { return 0; }
 
     CHECK_FUNC(Bin_subtree_Dtor_uncheked, node_ptr->left);
     CHECK_FUNC(Bin_subtree_Dtor_uncheked, node_ptr->right);
@@ -100,16 +109,90 @@ static uint32_t ptr_color(void const *const ptr) {
 
     if ((hash       & 0XFF) +
         (hash >> 8  & 0XFF) +
-        (hash >> 16 & 0XFF) < 0X80 * 3) {
+        (hash >> 16 & 0XFF) / 3 < 0X80) {
         hash = ~hash;
     }
 
     return hash & 0XFF'FF'FF;
 }
 
+static errno_t dot_declare_vertex(FILE *const out_stream, Bin_tree_node const *const cur_node) {
+    #define BORDER_COLOR "black"
+    #define EMPTY_COLOR  "lightgreen"
+
+    assert(out_stream); assert(cur_node);
+
+    fprintf_s(out_stream, "\tnode%p [shape = plaintext color = " BORDER_COLOR " style = \"\" "
+                                    "label = <<TABLE BORDER=\"0\" CELLBORDER=\"1\" "
+                                                    "BGCOLOR=\"#%06X\">"
+                                    "<TR><TD COLSPAN=\"2\" PORT=\"top\">[%p]</TD></TR>"
+                                    "<TR><TD>is_valid = %d</TD><TD>verify_used = %d</TD></TR>",
+                          cur_node, ptr_color(cur_node),
+                          cur_node,
+                          cur_node->is_valid, cur_node->verify_used);
+
+    switch (cur_node->type) {
+        case EXPRESSION_LITERAL_TYPE:
+            fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">type = literal</TD></TR>");
+            fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">val = %lG</TD></TR>", cur_node->val.val);
+            break;
+
+        case EXPRESSION_OPERATION_TYPE:
+            fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">type = operation</TD></TR>");
+
+            #define HANDLE_OPERATION(name, text_description, ...)                                       \
+            case name ## _OPERATION:                                                                    \
+                fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">val = " text_description "</TD></TR>");    \
+                break;
+            switch (cur_node->val.operation) {
+                //This include generates cases for all
+                //operations by applying previously declared
+                //macros HANDLE_OPERATION to them
+                #include "Operation_list.h"
+
+                default:
+                    PRINT_LINE();
+                    abort();
+            #undef HANDLE_OPERATION
+            }
+            break;
+
+        case EXPRESSION_VARIABLE_TYPE:
+            fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">type = variable</TD></TR>");
+            fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">val = %s</TD></TR>", cur_node->val.name);
+            break;
+
+        default:
+            PRINT_LINE();
+            abort();
+    }
+
+    if (cur_node->left) {
+        fprintf_s(out_stream, "<TR><TD PORT=\"left\" BGCOLOR=\"#%06X\">left = [%p]</TD>",
+                              ptr_color(cur_node->left), cur_node->left);
+    }
+    else {
+        fprintf_s(out_stream, "<TR><TD PORT=\"left\" BGCOLOR=\"" EMPTY_COLOR "\">left = nil</TD>");
+    }
+
+    if (cur_node->right) {
+        fprintf_s(out_stream, "<TD PORT=\"right\" BGCOLOR=\"#%06X\">right = [%p]</TD></TR>",
+                              ptr_color(cur_node->right), cur_node->right);
+    }
+    else {
+        fprintf_s(out_stream, "<TD PORT=\"right\" BGCOLOR=\"" EMPTY_COLOR "\">right = nil</TD></TR>");
+    }
+
+    fprintf_s(out_stream, "</TABLE>>]\n",
+                          cur_node->val);
+
+    return 0;
+
+    #undef BORDER_COLOR
+    #undef EMPTY_COLOR
+}
+
 static errno_t Bin_subtree_following_dot_dump(FILE *const out_stream, Bin_tree_node const *const cur_node) {
-    #define BORDER_COLOR      "black"
-    #define EMPTY_COLOR       "lightgreen"
     #define LEFT_ARROW_COLOR  "red"
     #define RIGHT_ARROW_COLOR "blue"
 
@@ -119,38 +202,7 @@ static errno_t Bin_subtree_following_dot_dump(FILE *const out_stream, Bin_tree_n
         return 0;
     }
 
-    fprintf_s(out_stream, "\tnode%p [shape = plaintext color = " BORDER_COLOR " style = \"\" "
-                                     "label = <<TABLE BORDER=\"0\" CELLBORDER=\"1\" "
-                                                     "BGCOLOR=\"#%06X\">"
-                                     "<TR><TD COLSPAN=\"2\" PORT=\"top\">[%p]</TD></TR>"
-                                     "<TR><TD>need_copy = %d</TD><TD>is_valid = %d</TD></TR>"
-                                     "<TR><TD COLSPAN=\"2\">verify_used = %d</TD></TR>"
-                                     "<TR><TD COLSPAN=\"2\">"
-                                         "VAL = " TREE_ELEM_OUT_FRM "</TD></TR>",
-                          cur_node,
-                          ptr_color(cur_node),
-                          cur_node,
-                          cur_node->need_copy, cur_node->is_valid,
-                          cur_node->verify_used,
-                          cur_node->val);
-
-    if (cur_node->left) {
-        fprintf_s(out_stream, "<TR><TD PORT=\"left\" BGCOLOR=\"#%06X\">left = %p</TD>",
-                              ptr_color(cur_node->left), cur_node->left);
-    }
-    else {
-        fprintf_s(out_stream, "<TR><TD PORT=\"left\" BGCOLOR=\"" EMPTY_COLOR "\">left = nothing</TD>");
-    }
-    if (cur_node->right) {
-        fprintf_s(out_stream, "<TD PORT=\"right\" BGCOLOR=\"#%06X\">right = %p</TD></TR>",
-                              ptr_color(cur_node->right), cur_node->right);
-    }
-    else {
-        fprintf_s(out_stream, "<TD PORT=\"right\" BGCOLOR=\"" EMPTY_COLOR "\">right = nothing</TD></TR>");
-    }
-
-    fprintf_s(out_stream, "</TABLE>>]\n",
-                          cur_node->val);
+    CHECK_FUNC(dot_declare_vertex, out_stream, cur_node);
 
     if (cur_node->left) {
         fprintf_s(out_stream, "\tnode%p:left -> node%p:top"
@@ -168,8 +220,6 @@ static errno_t Bin_subtree_following_dot_dump(FILE *const out_stream, Bin_tree_n
 
     return 0;
 
-    #undef BORDER_COLOR
-    #undef EMPTY_COLOR
     #undef LEFT_ARROW_COLOR
     #undef RIGHT_ARROW_COLOR
 }

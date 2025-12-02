@@ -6,10 +6,10 @@ SRC_DIR = ./src/
 SRC_SUF = .cpp
 make_src_path = $(addprefix $(SRC_DIR), $(addsuffix $(SRC_SUF), $(1)))
 
-H_DIR = ./include/
+H_DIR = ./include/ ./Expression_tree/include/
 
 LIB_DIR = ./static_libs/
-LIBS = Colored_printf File_input
+LIBS = Colored_printf File_input Expression_tree
 
 CXX = g++
 CXX_FLAGS = -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-equal -Winline   \
@@ -37,6 +37,7 @@ test : all
 	@$(TARGET)
 
 prepare :
+	@make -C ./Expression_tree/
 	@mkdir -p $(BIN_DIR) ./Visual_html/
 
 $(call make_object, My_functions)

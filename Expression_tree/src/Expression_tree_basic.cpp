@@ -1,9 +1,9 @@
-#include "Bin_tree.h"
+#include "Expression_tree.h"
 
 #define FINAL_CODE
 
-errno_t Bin_tree_Ctor(Bin_tree *const tree_ptr
-           ON_DEBUG(, Var_info const var_info)) {
+errno_t Expression_tree_Ctor(Expression_tree *const tree_ptr
+                  ON_DEBUG(, Var_info const var_info)) {
     assert(tree_ptr); assert(!tree_ptr->is_valid);
     ON_DEBUG(
     assert(var_info.position.file_name); assert(var_info.position.function_name);

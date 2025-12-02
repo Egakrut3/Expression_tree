@@ -1,10 +1,10 @@
-#ifndef BIN_TREE_H
-#define BIN_TREE_H
+#ifndef EXPRESSION_TREE_H
+#define EXPRESSION_TREE_H
 
 #include "Common.h"
 #include "Bin_tree_node.h"
 
-struct Bin_tree {
+struct Expression_tree {
     ON_DEBUG(Var_info var_info;)
     Bin_tree_node     *root;
 

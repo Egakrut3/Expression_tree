@@ -19,9 +19,9 @@ CXX_FLAGS = -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-
 -Wsign-promo -Wstack-usage=8192 -Wstrict-aliasing -Wstrict-null-sentinel -Wtype-limits           \
 -Wwrite-strings -Werror=vla -D_EJUDGE_CLIENT_SIDE -D__USE_MINGW_ANSI_STDIO -D_DEBUG
 
-TARGET_LIB = $(addprefix $(LIB_DIR), libBin_tree.a)
+TARGET_LIB = $(addprefix $(LIB_DIR), libExpression_tree.a)
 
-OBJ = Bin_tree_node_basic Bin_tree_node_functions Bin_tree_basic
+OBJ = Bin_tree_node_basic Bin_tree_node_functions Differentiator #Bin_tree_basic
 
 make_object = $(call make_bin_path, $(1)) : $(call make_src_path, $(1)); \
 @$(CXX) $(CXX_FLAGS) -c $$< $(addprefix -I, $(H_DIR)) -o $$@
@@ -39,7 +39,9 @@ $(call make_object, Bin_tree_node_basic)
 
 $(call make_object, Bin_tree_node_functions)
 
-$(call make_object, Bin_tree_basic)
+$(call make_object, Differentiator)
+
+#$(call make_object, Bin_tree_basic)
 
 clean:
 	@rm -rf $(BIN_DIR)

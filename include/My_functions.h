@@ -8,13 +8,13 @@ errno_t My_realloc(void **dest, void *prev_ptr, size_t size);
 
 errno_t My_fread(void *__restrict buffer, size_t size, size_t num,
                  FILE *__restrict stream);
-errno_t My_fwrite(const void *__restrict buffer, size_t size, size_t num,
+errno_t My_fwrite(void const *__restrict buffer, size_t size, size_t num,
                   FILE *__restrict stream);
 
 errno_t My_sscanf_s(size_t count, char const *__restrict buffer,
                     char const *__restrict format, ...);
-errno_t My_scanf_s(size_t const count, char const *__restrict const format, ...);
+errno_t My_scanf_s(size_t count, char const *__restrict format, ...);
 
-errno_t My_strdup(char const **dest, char const *src);
+errno_t My_strdup(char **dest, char const *src);
 
 #endif
