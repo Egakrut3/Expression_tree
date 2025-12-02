@@ -131,13 +131,27 @@ static errno_t read_N(Bin_tree_node **const dest, char const **const cur_pos) {
 
     size_t extra_len = 0;
 
-    double cur_val = 0;
-    CHECK_FUNC(My_sscanf_s, 1, *cur_pos, " %lG %zn", &cur_val, &extra_len);
-    *cur_pos += extra_len;
+    CHECK_FUNC(My_sscanf_s, 1, *cur_pos, "%*[^+-*/)$]%zn", &extra_len);
 
-    *dest = get_new_Bin_tree_node(nullptr, nullptr,
-                                  EXPRESSION_LITERAL_TYPE,
-                                  expression_val{.val = cur_val}, &cur_err);
+    char *last_ptr = nullptr;
+    strtod(*cur_pos, &last_ptr);
+    if (last_ptr == *cur_pos + extra_len) {
+        double cur_val = 0;
+        CHECK_FUNC(My_sscanf_s, 1, *cur_pos, "%lG", &cur_val);
+        *cur_pos += extra_len;
+
+        *dest = get_new_Bin_tree_node(nullptr, nullptr,
+                                      EXPRESSION_LITERAL_TYPE,
+                                      expression_val{.val = cur_val}, &cur_err);
+    }
+    else {
+        *dest = get_new_Bin_tree_node(nullptr, nullptr,
+                                      EXPRESSION_VARIABLE_TYPE,
+                                      expression_val{}, &cur_err);
+        CHECK_FUNC(My_calloc, (void **)&(*dest)->val.name, extra_len + 1, sizeof(*(*dest)->val.name));
+        CHECK_FUNC(strncpy_s, (*dest)->val.name, extra_len + 1, *cur_pos, extra_len);
+        *cur_pos += extra_len;
+    }
 
     return 0;
 }
