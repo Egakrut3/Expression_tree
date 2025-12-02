@@ -147,6 +147,8 @@ static errno_t read_E(Bin_tree_node **dest, char const **cur_pos);
 static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos) {
     assert(cur_pos); assert(*cur_pos);
 
+    errno_t cur_err = 0;
+
     size_t extra_len = 0;
 
     if (**cur_pos == '(') {
@@ -159,6 +161,61 @@ static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos) {
 
         return 0;
     }
+
+    #define HANDLE_OPERATION(name, text_description, ...)                               \
+    if (!strncmp(*cur_pos, text_description, strlen(text_description))) {               \
+        *dest = get_new_Bin_tree_node(nullptr, nullptr,                                 \
+                                      EXPRESSION_OPERATION_TYPE,                        \
+                                      expression_val{.operation = name ## _OPERATION},  \
+                                      &cur_err);                                        \
+        *cur_pos += strlen(text_description);                                           \
+                                                                                        \
+        CHECK_FUNC(My_sscanf_s, 0, *cur_pos, " (%zn", &extra_len);                      \
+        *cur_pos += extra_len;                                                          \
+                                                                                        \
+        CHECK_FUNC(read_E, &(*dest)->right, cur_pos);                                   \
+                                                                                        \
+        CHECK_FUNC(My_sscanf_s, 0, *cur_pos, " )%zn", &extra_len);                      \
+        *cur_pos += extra_len;                                                          \
+        return 0;                                                                       \
+    }
+    //This include generates branches of
+    //detecting and handling text description
+    //of unary functions by applying
+    //previously declared macros HANDLE_OPERATION
+    //to them
+    #include "Unary_functions.h"
+    #undef HANDLE_OPERATION
+
+    #define HANDLE_OPERATION(name, text_description, ...)                               \
+    if (!strncmp(*cur_pos, text_description, strlen(text_description))) {               \
+        *dest = get_new_Bin_tree_node(nullptr, nullptr,                                 \
+                                      EXPRESSION_OPERATION_TYPE,                        \
+                                      expression_val{.operation = name ## _OPERATION},  \
+                                      &cur_err);                                        \
+        *cur_pos += strlen(text_description);                                           \
+                                                                                        \
+        CHECK_FUNC(My_sscanf_s, 0, *cur_pos, " (%zn", &extra_len);                      \
+        *cur_pos += extra_len;                                                          \
+                                                                                        \
+        CHECK_FUNC(read_E, &(*dest)->left, cur_pos);                                    \
+                                                                                        \
+        CHECK_FUNC(My_sscanf_s, 0, *cur_pos, ", %zn", &extra_len);                      \
+        *cur_pos += extra_len;                                                          \
+                                                                                        \
+        CHECK_FUNC(read_E, &(*dest)->right, cur_pos);                                   \
+                                                                                        \
+        CHECK_FUNC(My_sscanf_s, 0, *cur_pos, " )%zn", &extra_len);                      \
+        *cur_pos += extra_len;                                                          \
+        return 0;                                                                       \
+    }
+    //This include generates branches of
+    //detecting and handling text description
+    //of binary functions by applying
+    //previously declared macros HANDLE_OPERATION
+    //to them
+    #include "Binary_functions.h"
+    #undef HANDLE_OPERATION
 
     CHECK_FUNC(read_N, dest, cur_pos);
 

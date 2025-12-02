@@ -1,1 +1,1 @@
-HANDLE_OPERATION(DIV, "\frac")
+HANDLE_OPERATION(DIV, "\\frac")
