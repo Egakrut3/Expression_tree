@@ -38,11 +38,17 @@ int main(int const argc, char const *const *const argv) {
     MAIN_CHECK_FUNC(Bin_subtree_dot_dump, out_stream, cur_node);
     fclose(out_stream);
 
+    fopen_s(&out_stream, "Latex_log.tex", "w");
+    MAIN_CHECK_FUNC(subtree_tex_dump, out_stream, cur_node);
+    fclose(out_stream);
+
     MAIN_CHECK_FUNC(system, "dot -Tsvg dot_file > log_file.svg");
 
+    /*
     fopen_s(&out_stream, "Tree_out", "w");
     MAIN_CHECK_FUNC(prefix_write_subtree, cur_node, out_stream);
     fclose(out_stream);
+    */
 
     colored_printf(GREEN, BLACK, "\n\n\nCOMMIT GITHUB\n\n");
     CLEAR_RESOURCES();

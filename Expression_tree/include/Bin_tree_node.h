@@ -66,6 +66,7 @@ errno_t Bin_subtree_Dtor(Bin_tree_node *node_ptr);
 errno_t Bin_subtree_verify(Bin_tree_node *node_ptr, errno_t *err_ptr);
 
 errno_t Bin_subtree_dot_dump(FILE *out_stream, Bin_tree_node const *node_ptr);
+errno_t subtree_tex_dump(FILE *out_stream, Bin_tree_node const *cur_node);
 
 #define INCORRECT_TREE_INPUT 1'000
 errno_t str_prefix_read_subtree(Bin_tree_node **dest, char const *buffer);

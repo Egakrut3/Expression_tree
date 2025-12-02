@@ -152,7 +152,7 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
                       *right_res = nullptr;
 
         switch (src->val.operation) {
-        #define HANDLE_OPERATION(name, decl)                                                                \
+        #define HANDLE_OPERATION(name, decl, ...)                                                           \
         case name ## _OPERATION:                                                                            \
             CHECK_FUNC(simplify_subtree, &right_res, src->right);                                           \
             if (right_res->type == EXPRESSION_LITERAL_TYPE) {                                               \
@@ -174,7 +174,7 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
         //HANDLE_OPERATION to them
         #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Wfloat-equal"
-        #include "Differentiator_unary_function_info.h"
+        #include "Differentiator_unary_functions.h"
         #pragma GCC diagnostic pop
         #undef HANDLE_OPERATION
 
@@ -183,7 +183,7 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
 
 
         #define HANDLE_OPERATION(name, decl, left_neutral, right_neutral,                                   \
-                                 left_const_crit, left_const_res, right_const_crit, right_const_res)        \
+                                 left_const_crit, left_const_res, right_const_crit, right_const_res, ...)   \
         case name ## _OPERATION:                                                                            \
             CHECK_FUNC(simplify_subtree, &left_res,  src->left);                                            \
             CHECK_FUNC(simplify_subtree, &right_res, src->right);                                           \
@@ -248,7 +248,7 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
         //HANDLE_OPERATION to them
         #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Wfloat-equal"
-        #include "Differentiator_binary_function_info.h"
+        #include "Differentiator_binary_functions.h"
         #pragma GCC diagnostic pop
         #undef HANDLE_OPERATION
 
@@ -257,7 +257,7 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
 
 
         #define HANDLE_OPERATION(name, decl, left_neutral, right_neutral,                                   \
-                                 left_const_crit, left_const_res, right_const_crit, right_const_res)        \
+                                 left_const_crit, left_const_res, right_const_crit, right_const_res, ...)   \
         case name ## _OPERATION:                                                                            \
             CHECK_FUNC(simplify_subtree, &left_res,  src->left);                                            \
             CHECK_FUNC(simplify_subtree, &right_res, src->right);                                           \
@@ -322,7 +322,7 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
         //HANDLE_OPERATION to them
         #pragma GCC diagnostic push
         #pragma GCC diagnostic ignored "-Wfloat-equal"
-        #include "Differentiator_binary_operator_info.h"
+        #include "Differentiator_binary_operators.h"
         #pragma GCC diagnostic pop
         #undef HANDLE_OPERATION
 

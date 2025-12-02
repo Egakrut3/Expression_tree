@@ -1,0 +1,2 @@
+HANDLE_OPERATION(SIN, "\\sin")
+HANDLE_OPERATION(COS, "\\cos")

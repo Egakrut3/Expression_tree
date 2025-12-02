@@ -198,9 +198,7 @@ static errno_t Bin_subtree_following_dot_dump(FILE *const out_stream, Bin_tree_n
 
     assert(out_stream);
 
-    if (!cur_node) {
-        return 0;
-    }
+    if (!cur_node) { return 0; }
 
     CHECK_FUNC(dot_declare_vertex, out_stream, cur_node);
 
@@ -243,6 +241,88 @@ errno_t Bin_subtree_dot_dump(FILE *const out_stream, Bin_tree_node const *const 
     return 0;
 
     #undef BACKGROUND_COLOR
+}
+
+static errno_t following_subtree_tex_dump(FILE *const out_stream, Bin_tree_node const *const cur_node) {
+    assert(out_stream);
+
+    if (!cur_node) { return 0; }
+
+    switch (cur_node->type) {
+        case EXPRESSION_LITERAL_TYPE:
+            assert(!cur_node->left); assert(!cur_node->right);
+            fprintf_s(out_stream, "%lG", cur_node->val.val);
+            break;
+
+        case EXPRESSION_OPERATION_TYPE:
+            switch (cur_node->val.operation) {
+            #define HANDLE_OPERATION(name, tex_decl, ...)                               \
+            case name ##_OPERATION:                                                     \
+                fprintf_s(out_stream, tex_decl "{");                                    \
+                CHECK_FUNC(following_subtree_tex_dump, out_stream, cur_node->right);    \
+                fprintf_s(out_stream, "}");                                             \
+                break;
+            //This include generates cases for all
+            //unary functions by applying previously declared
+            //macros HANDLE_OPERATION to them
+            #include "TEX_unary_functions.h"
+            #undef HANDLE_OPERATION
+
+            #define HANDLE_OPERATION(name, tex_decl, ...)                               \
+            case name ## _OPERATION:                                                    \
+                fprintf_s(out_stream, tex_decl "{");                                    \
+                CHECK_FUNC(following_subtree_tex_dump, out_stream, cur_node->left);     \
+                fprintf_s(out_stream, "}{");                                            \
+                CHECK_FUNC(following_subtree_tex_dump, out_stream, cur_node->right);    \
+                fprintf_s(out_stream, "}");                                             \
+                break;
+            //This include generates cases for all
+            //binary functions by applying previously declared
+            //macros HANDLE_OPERATION to them
+            #include "TEX_binary_functions.h"
+            #undef HANDLE_OPERATION
+
+            #define HANDLE_OPERATION(name, tex_decl, ...)                               \
+            case name ## _OPERATION:                                                    \
+                fprintf_s(out_stream, "(");                                             \
+                CHECK_FUNC(following_subtree_tex_dump, out_stream, cur_node->left);     \
+                fprintf_s(out_stream, tex_decl);                                        \
+                CHECK_FUNC(following_subtree_tex_dump, out_stream, cur_node->right);    \
+                fprintf_s(out_stream, ")");                                             \
+                break;
+            //This include generates cases for all
+            //binary operators by applying previously declared
+            //macros HANDLE_OPERATION to them
+            #include "TEX_binary_operators.h"
+            #undef HANDLE_OPERATION
+
+            default:
+                PRINT_LINE();
+                abort();
+            }
+            break;
+
+        case EXPRESSION_VARIABLE_TYPE:
+            assert(!cur_node->left); assert(!cur_node->right);
+            fprintf_s(out_stream, "%s", cur_node->val.name);
+            break;
+
+        default:
+            PRINT_LINE();
+            abort();
+    }
+
+    return 0;
+}
+
+errno_t subtree_tex_dump(FILE *const out_stream, Bin_tree_node const *const cur_node) {
+    assert(out_stream);
+
+    fprintf_s(out_stream, "\\documentclass{article}\n\\begin{document}\n$");
+    CHECK_FUNC(following_subtree_tex_dump, out_stream, cur_node);
+    fprintf_s(out_stream, "$\n\\end{document}\n");
+
+    return 0;
 }
 
 #undef FINAL_CODE
