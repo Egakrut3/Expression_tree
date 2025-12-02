@@ -10,15 +10,17 @@ enum expression_type {
     EXPRESSION_VARIABLE_TYPE,
 };
 
-#define HANDLE_OPERATION(name, ...) \
-name ## _OPERATION,
 enum expression_operation {
-    //This include generates enum-states for all
+    #define HANDLE_OPERATION(name, ...) \
+    name ## _OPERATION,
+    //This includes generates enum-states for all
     //operations by applying previously declared
     //macros HANDLE_OPERATION to them
-    #include "Operation_list.h"
+    #include "Text_operations/Unary_functions.h"
+    #include "Text_operations/Binary_functions.h"
+    #include "Text_operations/Binary_operators.h"
+    #undef HANDLE_OPERATION
 };
-#undef HANDLE_OPERATION
 
 union expression_val {
     double               val;
@@ -45,14 +47,14 @@ errno_t Bin_tree_node_Ctor(Bin_tree_node *node_ptr,
 
 //TODO -
 /*
-errno_t get_new_Bin_tree_node(Bin_tree_node **dest,
-                              Bin_tree_node *left, Bin_tree_node *right,
-                              expression_type type, expression_val val);
+errno_t new_Bin_tree_node(Bin_tree_node **dest,
+                          Bin_tree_node *left, Bin_tree_node *right,
+                          expression_type type, expression_val val);
 */
 
-Bin_tree_node *get_new_Bin_tree_node(Bin_tree_node *left, Bin_tree_node *right,
-                                     expression_type type, expression_val val,
-                                     errno_t *err_ptr);
+Bin_tree_node *new_Bin_tree_node(Bin_tree_node *left, Bin_tree_node *right,
+                                 expression_type type, expression_val val,
+                                 errno_t *err_ptr);
 
 errno_t Bin_tree_node_Dtor(Bin_tree_node *node_ptr);
 
@@ -60,12 +62,12 @@ errno_t Bin_tree_node_Dtor(Bin_tree_node *node_ptr);
 #define TREE_NODE_VERIFY_USED 0B100'000'000'000
 errno_t Bin_tree_node_verify(Bin_tree_node const *node_ptr, errno_t *err_ptr);
 
-errno_t Bin_subtree_Dtor(Bin_tree_node *node_ptr);
+errno_t subtree_Dtor(Bin_tree_node *node_ptr);
 
 #define TREE_INVALID_STRUCTURE 0B1'000'000'000'000
-errno_t Bin_subtree_verify(Bin_tree_node *node_ptr, errno_t *err_ptr);
+errno_t subtree_verify(Bin_tree_node *node_ptr, errno_t *err_ptr);
 
-errno_t Bin_subtree_dot_dump(FILE *out_stream, Bin_tree_node const *node_ptr);
+errno_t subtree_dot_dump(FILE *out_stream, Bin_tree_node const *node_ptr);
 errno_t subtree_tex_dump(FILE *out_stream, Bin_tree_node const *cur_node);
 
 #define INCORRECT_TREE_INPUT 1'000

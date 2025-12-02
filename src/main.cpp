@@ -2,6 +2,7 @@
 #include "Option_manager.h"
 #include "Bin_tree_node.h"
 //TODO - add more operations
+#include <tgmath.h>
 
 int main(int const argc, char const *const *const argv) {
     #define FINAL_CODE
@@ -20,37 +21,38 @@ int main(int const argc, char const *const *const argv) {
     MAIN_CHECK_FUNC(get_all_content, inp_stream, nullptr, &buffer);
     fclose(inp_stream);
 
-    /*
-    Bin_tree_node *cur_node = nullptr;
-    MAIN_CHECK_FUNC(str_prefix_read_subtree, &cur_node, buffer);
-    */
-
-    /*
-    errno_t cur_err = 0;
-    Bin_tree_node *dif_node  = differentiate_subtree(cur_node, &cur_err),
-                  *simp_node = nullptr;
-    MAIN_CHECK_FUNC(simplify_subtree, &simp_node, dif_node);
-    */
-
 
     Bin_tree_node *cur_node = nullptr;
     MAIN_CHECK_FUNC(str_infix_read_subtree, &cur_node, buffer);
 
 
+    /*
+    Bin_tree_node *cur_node = nullptr;
+    MAIN_CHECK_FUNC(str_prefix_read_subtree, &cur_node, buffer);
+    */
+
+
+    errno_t cur_err = 0;
+    Bin_tree_node *dif_node  = differentiate_subtree(cur_node, &cur_err),
+                  *simp_node = nullptr;
+    MAIN_CHECK_FUNC(simplify_subtree, &simp_node, dif_node);
+
+
+
     FILE *out_stream = nullptr;
     fopen_s(&out_stream, "dot_file", "w");
-    MAIN_CHECK_FUNC(Bin_subtree_dot_dump, out_stream, cur_node);
+    MAIN_CHECK_FUNC(subtree_dot_dump, out_stream, simp_node);
     fclose(out_stream);
 
     fopen_s(&out_stream, "Latex_log.tex", "w");
-    MAIN_CHECK_FUNC(subtree_tex_dump, out_stream, cur_node);
+    MAIN_CHECK_FUNC(subtree_tex_dump, out_stream, simp_node);
     fclose(out_stream);
 
     MAIN_CHECK_FUNC(system, "dot -Tsvg dot_file > log_file.svg");
 
 
     fopen_s(&out_stream, "Tree_out", "w");
-    MAIN_CHECK_FUNC(prefix_write_subtree, cur_node, out_stream);
+    MAIN_CHECK_FUNC(prefix_write_subtree, simp_node, out_stream);
     fclose(out_stream);
 
 

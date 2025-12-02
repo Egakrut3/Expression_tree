@@ -1,1 +1,1 @@
-(/ (+ (* (5 nil nil )(sin nil (x nil nil )))(1 nil nil ))(xy nil nil ))
+(* (pow (+ (x nil nil )(1 nil nil ))(x nil nil ))(+ (ln nil (+ (x nil nil )(1 nil nil )))(* (x nil nil )(/ (1 nil nil )(+ (x nil nil )(1 nil nil ))))))
