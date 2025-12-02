@@ -1,8 +1,6 @@
 #include "Common.h"
 #include "Option_manager.h"
 #include "Bin_tree_node.h"
-//TODO - add more operations
-#include <tgmath.h>
 
 int main(int const argc, char const *const *const argv) {
     #define FINAL_CODE

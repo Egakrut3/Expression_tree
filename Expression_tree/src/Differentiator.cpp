@@ -86,7 +86,7 @@ static Bin_tree_node *DIV_differentiate(Bin_tree_node const *const src, errno_t 
 
     return DIV_(SUB_(MLT_(DIFF(src->left), COPY(src->right)),
                      MLT_(COPY(src->left), DIFF(src->right))),
-                MLT_(COPY(src->right), COPY(src->right))); //TODO - possible ^2
+                POW_(COPY(src->right), LITER_(2)));
 }
 
 static Bin_tree_node *LN_differentiate(Bin_tree_node const *const src, errno_t *const err_ptr) {

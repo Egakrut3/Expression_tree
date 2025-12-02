@@ -1,1 +1,1 @@
-(* (pow (+ (x nil nil )(1 nil nil ))(x nil nil ))(+ (ln nil (+ (x nil nil )(1 nil nil )))(* (x nil nil )(/ (1 nil nil )(+ (x nil nil )(1 nil nil ))))))
+(/ (- (* (* (pow (+ (x nil nil )(1 nil nil ))(x nil nil ))(+ (ln nil (+ (x nil nil )(1 nil nil )))(* (x nil nil )(/ (1 nil nil )(+ (x nil nil )(1 nil nil ))))))(* (x nil nil )(y nil nil )))(* (pow (+ (x nil nil )(1 nil nil ))(x nil nil ))(y nil nil )))(pow (* (x nil nil )(y nil nil ))(2 nil nil )))
