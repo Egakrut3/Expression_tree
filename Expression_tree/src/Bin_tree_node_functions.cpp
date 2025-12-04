@@ -278,7 +278,7 @@ static errno_t read_T(Bin_tree_node **const dest, char const **const cur_pos) {
 
     CHECK_FUNC(read_P, dest, cur_pos);
 
-    while (true) { //TODO - possible code-generation
+    while (true) {
         CHECK_FUNC(skip_spaces, cur_pos);
         if (**cur_pos == '*') {
             *dest = new_Bin_tree_node(*dest, nullptr,
@@ -310,7 +310,7 @@ static errno_t read_E(Bin_tree_node **const dest, char const **const cur_pos) {
 
     CHECK_FUNC(read_T, dest, cur_pos);
 
-    while (true) { //TODO - possible code-generation
+    while (true) {
         CHECK_FUNC(skip_spaces, cur_pos);
         if (**cur_pos == '+') {
             *dest = new_Bin_tree_node(*dest, nullptr,
