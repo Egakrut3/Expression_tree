@@ -1,7 +1,6 @@
 #include "Common.h"
 #include "Option_manager.h"
 #include "Bin_tree_node.h"
-//TODO - modify pow differentiate
 
 int main(int const argc, char const *const *const argv) {
     #define FINAL_CODE
