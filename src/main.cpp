@@ -15,7 +15,7 @@ int main(int const argc, char const *const *const argv) {
 
 
     FILE *inp_stream = nullptr;
-    fopen_s(&inp_stream, "Tree_in", "r");
+    fopen_s(&inp_stream, "./Tree_in", "r");
     char *buffer = nullptr;
     MAIN_CHECK_FUNC(get_all_content, inp_stream, nullptr, &buffer);
     fclose(inp_stream);
@@ -40,23 +40,23 @@ int main(int const argc, char const *const *const argv) {
 
 
     FILE *out_stream = nullptr;
-    fopen_s(&out_stream, "dot_file", "w");
+    fopen_s(&out_stream, "./Logs/dot_file", "w");
     MAIN_CHECK_FUNC(subtree_dot_dump, out_stream, simp_node);
     fclose(out_stream);
 
 
 
-    fopen_s(&out_stream, "Latex_log.tex", "w");
+    fopen_s(&out_stream, "./Logs/tex_log.tex", "w");
     MAIN_CHECK_FUNC(subtree_tex_dump, out_stream, simp_node);
     fclose(out_stream);
 
 
 
-    MAIN_CHECK_FUNC(system, "dot -Tsvg dot_file > log_file.svg");
+    MAIN_CHECK_FUNC(system, "dot -Tsvg ./Logs/dot_file > ./Logs/dot_log.svg");
 
 
 
-    fopen_s(&out_stream, "Tree_out", "w");
+    fopen_s(&out_stream, "./Logs/Tree_out", "w");
     MAIN_CHECK_FUNC(prefix_write_subtree, simp_node, out_stream);
     fclose(out_stream);
 

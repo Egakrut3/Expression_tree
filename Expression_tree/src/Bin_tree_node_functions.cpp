@@ -148,7 +148,6 @@ static errno_t read_N(Bin_tree_node **const dest, char const **const cur_pos) {
 
     double cur_val = 0;
     CHECK_FUNC(skip_spaces, cur_pos);
-    fprintf_s(stderr, "N\n%s\n", *cur_pos);
     CHECK_FUNC(My_sscanf_s, 1, *cur_pos, "%lG%zn", &cur_val, &extra_len);
     (*dest)->val.val = cur_val;
     *cur_pos += extra_len;
@@ -167,7 +166,6 @@ static errno_t read_ID(Bin_tree_node **const dest, char const **cur_pos) {
                               expression_val{}, &cur_err);
 
     CHECK_FUNC(skip_spaces, cur_pos);
-    fprintf_s(stderr, "ID\n%s\n", *cur_pos);
     CHECK_FUNC(My_sscanf_s, 1, *cur_pos, "%*[^+-*/,)$]%zn", &extra_len);
     CHECK_FUNC(My_calloc, (void **)&(*dest)->val.name, extra_len + 1, sizeof(*(*dest)->val.name));
     CHECK_FUNC(strncpy_s, (*dest)->val.name, extra_len + 1, *cur_pos, extra_len);
@@ -184,7 +182,6 @@ static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos) {
     errno_t cur_err = 0;
     size_t extra_len = 0;
     CHECK_FUNC(skip_spaces, cur_pos);
-    fprintf_s(stderr, "P\n%s\n", *cur_pos);
 
     if (**cur_pos == '(') {
         *cur_pos += 1;
@@ -277,8 +274,6 @@ static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos) {
 static errno_t read_T(Bin_tree_node **const dest, char const **const cur_pos) {
     assert(cur_pos); assert(*cur_pos);
 
-    fprintf_s(stderr, "T\n%s\n", *cur_pos);
-
     errno_t cur_err = 0;
 
     CHECK_FUNC(read_P, dest, cur_pos);
@@ -310,8 +305,6 @@ static errno_t read_T(Bin_tree_node **const dest, char const **const cur_pos) {
 
 static errno_t read_E(Bin_tree_node **const dest, char const **const cur_pos) {
     assert(cur_pos); assert(*cur_pos);
-
-    fprintf_s(stderr, "E\n%s\n", *cur_pos);
 
     errno_t cur_err = 0;
 
@@ -346,8 +339,6 @@ static errno_t read_E(Bin_tree_node **const dest, char const **const cur_pos) {
 
 static errno_t read_G(Bin_tree_node **const dest, char const **const cur_pos) {
     assert(cur_pos); assert(*cur_pos);
-
-    fprintf_s(stderr, "G\n%s\n", *cur_pos);
 
     CHECK_FUNC(read_E, dest, cur_pos);
 
