@@ -8,6 +8,7 @@
 
 struct Config
 {
+    FILE *inp_stream;
     bool is_help;
 
     bool is_valid;

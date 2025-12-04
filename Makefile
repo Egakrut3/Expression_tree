@@ -34,11 +34,11 @@ all : prepare $(call make_bin_path, $(OBJ))
 	@echo Compilation end
 
 test : all
-	@$(TARGET)
+	@$(TARGET) --in Tree_in
 
 prepare :
 	@make -C ./Expression_tree/
-	@mkdir -p $(BIN_DIR) ./Visual_html/
+	@mkdir -p $(BIN_DIR) ./Logs/
 
 $(call make_object, My_functions)
 
@@ -47,4 +47,4 @@ $(call make_object, Option_manager)
 $(call make_object, main)
 
 clean:
-	@rm -rf $(BIN_DIR) ./Visual_html/
+	@rm -rf $(BIN_DIR) ./Logs/
