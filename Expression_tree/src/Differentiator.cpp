@@ -101,6 +101,20 @@ static Bin_tree_node *POW_differentiate(Bin_tree_node const *const src, errno_t 
     assert(src);
     assert(src->type == EXPRESSION_OPERATION_TYPE); assert(src->val.operation == POW_OPERATION);
 
+    if (src->left->type == EXPRESSION_LITERAL_TYPE) {
+        assert(!src->left->left); assert(!src->left->right);
+
+        return MLT_(COPY(src),
+                    MLT_(DIFF(src->right), LN_(src->left)));
+    }
+
+    if (src->right->type == EXPRESSION_LITERAL_TYPE) {
+        assert(!src->right->left); assert(!src->right->right);
+
+        return MLT_(MLT_(COPY(src->right), POW_(COPY(src->left), SUB_(COPY(src->right), LITER_(1)))),
+                         DIFF(src->left));
+    }
+
     return MLT_(COPY(src), ADD_(MLT_(DIFF(src->right), LN_(src->left)),
                                 MLT_(COPY(src->right), DIV_(DIFF(src->left), COPY(src->left)))));
 }
@@ -190,7 +204,6 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
                     *dest = name ## _(right_res);                       \
                 }                                                       \
                 break;
-
             //This include generates cases for
             //simplifying all existing unary functions
             //by applying previously declared macros
@@ -253,7 +266,6 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
                     *dest = name ## _(left_res, right_res);                             \
                 }                                                                       \
                 break;
-
             //This include generates cases for
             //simplifying all existing binary functions
             //by applying previously declared macros
@@ -316,7 +328,6 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
                     *dest = name ## _(left_res, right_res);                             \
                 }                                                                       \
                 break;
-
             //This include generates cases for
             //simplifying all existing binary operators
             //by applying previously declared macros
@@ -331,7 +342,6 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
                 PRINT_LINE();
                 abort();
         }
-        #undef HANDLE_OPERATION
 
         return 0;
     }
