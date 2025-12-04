@@ -1,6 +1,7 @@
 #include "Common.h"
 #include "Option_manager.h"
 #include "Bin_tree_node.h"
+//TODO - modify pow differentiate
 
 int main(int const argc, char const *const *const argv) {
     #define FINAL_CODE
@@ -13,11 +14,13 @@ int main(int const argc, char const *const *const argv) {
     #define FINAL_CODE          \
     Config_Dtor(&cur_config);
 
+
     FILE *inp_stream = nullptr;
     fopen_s(&inp_stream, "Tree_in", "r");
     char *buffer = nullptr;
     MAIN_CHECK_FUNC(get_all_content, inp_stream, nullptr, &buffer);
     fclose(inp_stream);
+
 
 
     Bin_tree_node *cur_node = nullptr;
@@ -42,11 +45,16 @@ int main(int const argc, char const *const *const argv) {
     MAIN_CHECK_FUNC(subtree_dot_dump, out_stream, simp_node);
     fclose(out_stream);
 
+
+
     fopen_s(&out_stream, "Latex_log.tex", "w");
     MAIN_CHECK_FUNC(subtree_tex_dump, out_stream, simp_node);
     fclose(out_stream);
 
+
+
     MAIN_CHECK_FUNC(system, "dot -Tsvg dot_file > log_file.svg");
+
 
 
     fopen_s(&out_stream, "Tree_out", "w");

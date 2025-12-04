@@ -245,6 +245,154 @@ errno_t subtree_dot_dump(FILE *const out_stream, Bin_tree_node const *const cur_
     #undef BACKGROUND_COLOR
 }
 
+static bool need_left_parenthesize(Bin_tree_node const *const cur_node) {
+    assert(cur_node); assert(cur_node->type == EXPRESSION_OPERATION_TYPE); assert(cur_node->left);
+
+    size_t parent_order = 0,
+           child_order  = 0;
+
+    switch (cur_node->val.operation) {
+        #define HANDLE_OPERATION(name, ...) \
+            case name ## _OPERATION:        \
+                child_order = 0;            \
+                break;
+
+        //This include generates cases for all
+        //binary and unary functions by applying
+        //previously declared macros HANDLE_OPERATION
+        //to them
+        #include "TEX_operations/Unary_functions.h"
+        #include "TEX_operations/Binary_functions.h"
+        #undef HANDLE_OPERATION
+
+        #define HANDLE_OPERATION(name, tex_decl, left_order, ...)   \
+        case name ## _OPERATION:                                    \
+            parent_order = left_order;                              \
+            break;
+
+        //This include generates cases for all
+        //binary operators by applying previously declared
+        //macros HANDLE_OPERATION to them
+        #include "TEX_operations/Binary_operators.h"
+        #undef HANDLE_OPERATION
+
+        default:
+            PRINT_LINE();
+            abort();
+    }
+
+    if (cur_node->left->type == EXPRESSION_OPERATION_TYPE) {
+        switch (cur_node->left->val.operation) {
+            #define HANDLE_OPERATION(name, ...) \
+            case name ## _OPERATION:            \
+                child_order = 0;                \
+                break;
+
+            //This include generates cases for all
+            //binary and unary functions by applying
+            //previously declared macros HANDLE_OPERATION
+            //to them
+            #include "TEX_operations/Unary_functions.h"
+            #include "TEX_operations/Binary_functions.h"
+            #undef HANDLE_OPERATION
+
+            #define HANDLE_OPERATION(name, tex_decl, left_order, ...)   \
+            case name ## _OPERATION:                                    \
+                child_order = left_order;                               \
+                break;
+
+            //This include generates cases for all
+            //binary operators by applying previously declared
+            //macros HANDLE_OPERATION to them
+            #include "TEX_operations/Binary_operators.h"
+            #undef HANDLE_OPERATION
+
+            default:
+                PRINT_LINE();
+                abort();
+        }
+    }
+    else {
+        child_order = 0;
+    }
+
+    return parent_order < child_order;
+}
+
+static bool need_right_parenthesize(Bin_tree_node const *const cur_node) {
+    assert(cur_node); assert(cur_node->type == EXPRESSION_OPERATION_TYPE); assert(cur_node->right);
+
+    size_t parent_order = 0,
+           child_order  = 0;
+
+    switch (cur_node->val.operation) {
+        #define HANDLE_OPERATION(name, ...) \
+        case name ## _OPERATION:            \
+            child_order = 0;                \
+            break;
+
+        //This include generates cases for all
+        //binary and unary functions by applying
+        //previously declared macros HANDLE_OPERATION
+        //to them
+        #include "TEX_operations/Unary_functions.h"
+        #include "TEX_operations/Binary_functions.h"
+        #undef HANDLE_OPERATION
+
+        #define HANDLE_OPERATION(name, tex_decl, left_order, right_order, ...)  \
+        case name ## _OPERATION:                                                \
+            parent_order = right_order;                                         \
+            break;
+
+        //This include generates cases for all
+        //binary operators by applying previously declared
+        //macros HANDLE_OPERATION to them
+        #include "TEX_operations/Binary_operators.h"
+        #undef HANDLE_OPERATION
+
+        default:
+            PRINT_LINE();
+            abort();
+    }
+
+    if (cur_node->right->type == EXPRESSION_OPERATION_TYPE) {
+        switch (cur_node->right->val.operation) {
+            #define HANDLE_OPERATION(name, ...) \
+            case name ## _OPERATION:            \
+                child_order = 0;                \
+                break;
+
+            //This include generates cases for all
+            //binary and unary functions by applying
+            //previously declared macros HANDLE_OPERATION
+            //to them
+            #include "TEX_operations/Unary_functions.h"
+            #include "TEX_operations/Binary_functions.h"
+            #undef HANDLE_OPERATION
+
+            #define HANDLE_OPERATION(name, tex_decl, right_order, ...)  \
+            case name ## _OPERATION:                                    \
+                child_order = right_order;                              \
+                break;
+
+            //This include generates cases for all
+            //binary operators by applying previously declared
+            //macros HANDLE_OPERATION to them
+            #include "TEX_operations/Binary_operators.h"
+            #undef HANDLE_OPERATION
+
+            default:
+                PRINT_LINE();
+                abort();
+        }
+    }
+    else {
+        child_order = 0;
+    }
+
+    return parent_order < child_order;
+}
+
 static errno_t subtree_following_tex_dump(FILE *const out_stream, Bin_tree_node const *const cur_node) {
     assert(out_stream);
 
@@ -258,49 +406,61 @@ static errno_t subtree_following_tex_dump(FILE *const out_stream, Bin_tree_node 
 
         case EXPRESSION_OPERATION_TYPE:
             switch (cur_node->val.operation) {
-            #define HANDLE_OPERATION(name, tex_decl, ...)                               \
-            case name ##_OPERATION:                                                     \
-                fprintf_s(out_stream, tex_decl "{");                                    \
-                CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->right);    \
-                fprintf_s(out_stream, "}");                                             \
-                break;
-            //This include generates cases for all
-            //unary functions by applying previously declared
-            //macros HANDLE_OPERATION to them
-            #include "TEX_operations/Unary_functions.h"
-            #undef HANDLE_OPERATION
+                #define HANDLE_OPERATION(name, tex_decl, ...)                               \
+                case name ##_OPERATION:                                                     \
+                    fprintf_s(out_stream, tex_decl "{");                                    \
+                    CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->right);    \
+                    fprintf_s(out_stream, "}");                                             \
+                    break;
+                //This include generates cases for all
+                //unary functions by applying previously declared
+                //macros HANDLE_OPERATION to them
+                #include "TEX_operations/Unary_functions.h"
+                #undef HANDLE_OPERATION
 
-            #define HANDLE_OPERATION(name, tex_decl, ...)                               \
-            case name ## _OPERATION:                                                    \
-                fprintf_s(out_stream, tex_decl "{");                                    \
-                CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->left);     \
-                fprintf_s(out_stream, "}{");                                            \
-                CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->right);    \
-                fprintf_s(out_stream, "}");                                             \
-                break;
-            //This include generates cases for all
-            //binary functions by applying previously declared
-            //macros HANDLE_OPERATION to them
-            #include "TEX_operations/Binary_functions.h"
-            #undef HANDLE_OPERATION
+                #define HANDLE_OPERATION(name, tex_decl, ...)                               \
+                case name ## _OPERATION:                                                    \
+                    fprintf_s(out_stream, tex_decl "{");                                    \
+                    CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->left);     \
+                    fprintf_s(out_stream, "}{");                                            \
+                    CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->right);    \
+                    fprintf_s(out_stream, "}");                                             \
+                    break;
+                //This include generates cases for all
+                //binary functions by applying previously declared
+                //macros HANDLE_OPERATION to them
+                #include "TEX_operations/Binary_functions.h"
+                #undef HANDLE_OPERATION
 
-            #define HANDLE_OPERATION(name, tex_decl, ...)                               \
-            case name ## _OPERATION:                                                    \
-                fprintf_s(out_stream, "(");                                             \
-                CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->left);     \
-                fprintf_s(out_stream, tex_decl);                                        \
-                CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->right);    \
-                fprintf_s(out_stream, ")");                                             \
-                break;
-            //This include generates cases for all
-            //binary operators by applying previously declared
-            //macros HANDLE_OPERATION to them
-            #include "TEX_operations/Binary_operators.h"
-            #undef HANDLE_OPERATION
+                #define HANDLE_OPERATION(name, tex_decl, ...)                                   \
+                case name ## _OPERATION:                                                        \
+                    if (need_left_parenthesize(cur_node)) {                                     \
+                        fprintf_s(out_stream, "(");                                             \
+                        CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->left);     \
+                        fprintf_s(out_stream, ")");                                             \
+                    }                                                                           \
+                    else {                                                                      \
+                        CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->left);     \
+                    }                                                                           \
+                    fprintf_s(out_stream, tex_decl);                                            \
+                    if (need_right_parenthesize(cur_node)) {                                    \
+                        fprintf_s(out_stream, "(");                                             \
+                        CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->right);    \
+                        fprintf_s(out_stream, ")");                                             \
+                    }                                                                           \
+                    else {                                                                      \
+                        CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->right);    \
+                    }                                                                           \
+                    break;
+                //This include generates cases for all
+                //binary operators by applying previously declared
+                //macros HANDLE_OPERATION to them
+                #include "TEX_operations/Binary_operators.h"
+                #undef HANDLE_OPERATION
 
-            default:
-                PRINT_LINE();
-                abort();
+                default:
+                    PRINT_LINE();
+                    abort();
             }
             break;
 
