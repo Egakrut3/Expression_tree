@@ -142,7 +142,7 @@ static errno_t dot_declare_vertex(FILE *const out_stream, Bin_tree_node const *c
 
             switch (cur_node->val.operation) {
                 #define HANDLE_OPERATION(name, text_decl, ...)                                       \
-                case name ## _OPERATION:                                                                    \
+                case name ## _OPERATION:                                                             \
                     fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">val = " text_decl "</TD></TR>");    \
                     break;
                 //This include generates cases for all
@@ -412,9 +412,11 @@ static errno_t subtree_following_tex_dump(FILE *const out_stream, Bin_tree_node 
 
                 #define HANDLE_OPERATION(name, tex_decl, ...)                               \
                 case name ## _OPERATION:                                                    \
-                    fprintf_s(out_stream, tex_decl "{");                                    \
+                    fprintf_s(out_stream, tex_decl);                                        \
+                    fprintf_s(out_stream, "{");                                             \
                     CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->left);     \
-                    fprintf_s(out_stream, "}{");                                            \
+                    fprintf_s(out_stream, "}");                                             \
+                    fprintf_s(out_stream, "{");                                             \
                     CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->right);    \
                     fprintf_s(out_stream, "}");                                             \
                     break;
@@ -426,6 +428,7 @@ static errno_t subtree_following_tex_dump(FILE *const out_stream, Bin_tree_node 
 
                 #define HANDLE_OPERATION(name, tex_decl, ...)                                   \
                 case name ## _OPERATION:                                                        \
+                    fprintf_s(out_stream, "{");                                                 \
                     if (need_left_parenthesize(cur_node)) {                                     \
                         fprintf_s(out_stream, "(");                                             \
                         CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->left);     \
@@ -434,7 +437,9 @@ static errno_t subtree_following_tex_dump(FILE *const out_stream, Bin_tree_node 
                     else {                                                                      \
                         CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->left);     \
                     }                                                                           \
-                    fprintf_s(out_stream, tex_decl);                                            \
+                    fprintf_s(out_stream, "}");                                                 \
+                    fprintf_s(out_stream, " " tex_decl " ");                                    \
+                    fprintf_s(out_stream, "{");                                                 \
                     if (need_right_parenthesize(cur_node)) {                                    \
                         fprintf_s(out_stream, "(");                                             \
                         CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->right);    \
@@ -443,6 +448,7 @@ static errno_t subtree_following_tex_dump(FILE *const out_stream, Bin_tree_node 
                     else {                                                                      \
                         CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->right);    \
                     }                                                                           \
+                    fprintf_s(out_stream, "}");                                                 \
                     break;
                 //This include generates cases for all
                 //binary operators by applying previously declared

@@ -166,7 +166,7 @@ static errno_t read_ID(Bin_tree_node **const dest, char const **cur_pos) {
                               expression_val{}, &cur_err);
 
     CHECK_FUNC(skip_spaces, cur_pos);
-    CHECK_FUNC(My_sscanf_s, 1, *cur_pos, "%*[^+-*/,)$]%zn", &extra_len);
+    CHECK_FUNC(My_sscanf_s, 1, *cur_pos, "%*[^ \f\n\r\t\v+-*/,)$]%zn", &extra_len);
     CHECK_FUNC(My_calloc, (void **)&(*dest)->val.name, extra_len + 1, sizeof(*(*dest)->val.name));
     CHECK_FUNC(strncpy_s, (*dest)->val.name, extra_len + 1, *cur_pos, extra_len);
     *cur_pos += extra_len;
@@ -260,7 +260,8 @@ static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos) {
     #undef HANDLE_OPERATION
 
     CHECK_FUNC(skip_spaces, cur_pos);
-    CHECK_FUNC(My_sscanf_s, 1, *cur_pos, "%*[^+-*/,)$]%zn", &extra_len);
+    CHECK_FUNC(My_sscanf_s, 1, *cur_pos, "%*[^ \f\n\r\t\v+-*/,)$]%zn", &extra_len); //TODO - possible not use sscanf
+    //TODO - use tokenizator
 
     char *last_ptr = nullptr;
     strtod(*cur_pos, &last_ptr);

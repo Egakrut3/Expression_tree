@@ -1,6 +1,7 @@
 #include "Common.h"
 #include "Option_manager.h"
 #include "Bin_tree_node.h"
+//TODO - get id add spaces in the end of variable name
 
 int main(int const argc, char const *const *const argv) {
     #define FINAL_CODE
@@ -19,7 +20,6 @@ int main(int const argc, char const *const *const argv) {
     char *buffer = nullptr;
     MAIN_CHECK_FUNC(get_all_content, inp_stream, nullptr, &buffer);
     fclose(inp_stream);
-
 
 
     Bin_tree_node *cur_node = nullptr;
@@ -41,23 +41,20 @@ int main(int const argc, char const *const *const argv) {
 
     FILE *out_stream = nullptr;
     fopen_s(&out_stream, "./Logs/dot_file", "w");
-    MAIN_CHECK_FUNC(subtree_dot_dump, out_stream, simp_node);
+    MAIN_CHECK_FUNC(subtree_dot_dump, out_stream, cur_node);
     fclose(out_stream);
-
-
-
-    fopen_s(&out_stream, "./Logs/tex_log.tex", "w");
-    MAIN_CHECK_FUNC(subtree_tex_dump, out_stream, simp_node);
-    fclose(out_stream);
-
-
-
     MAIN_CHECK_FUNC(system, "dot -Tsvg ./Logs/dot_file > ./Logs/dot_log.svg");
 
 
 
+    fopen_s(&out_stream, "./Logs/tex_log.tex", "w");
+    MAIN_CHECK_FUNC(subtree_tex_dump, out_stream, cur_node);
+    fclose(out_stream);
+
+
+
     fopen_s(&out_stream, "./Logs/Tree_out", "w");
-    MAIN_CHECK_FUNC(prefix_write_subtree, simp_node, out_stream);
+    MAIN_CHECK_FUNC(prefix_write_subtree, cur_node, out_stream);
     fclose(out_stream);
 
 

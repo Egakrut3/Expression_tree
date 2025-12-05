@@ -94,7 +94,7 @@ static Bin_tree_node *LN_differentiate(Bin_tree_node const *const src, errno_t *
     assert(src->type == EXPRESSION_OPERATION_TYPE); assert(src->val.operation == LN_OPERATION);
     assert(!src->left);
 
-    return DIV_(DIFF(src), COPY(src));
+    return DIV_(DIFF(src->right), COPY(src->right));
 }
 
 static Bin_tree_node *POW_differentiate(Bin_tree_node const *const src, errno_t *const err_ptr) {
