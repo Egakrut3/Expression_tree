@@ -40,20 +40,20 @@ int main(int const argc, char const *const *const argv) {
 
     FILE *out_stream = nullptr;
     fopen_s(&out_stream, "./Logs/dot_file", "w");
-    MAIN_CHECK_FUNC(subtree_dot_dump, out_stream, cur_node);
+    MAIN_CHECK_FUNC(subtree_dot_dump, out_stream, simp_node);
     fclose(out_stream);
     MAIN_CHECK_FUNC(system, "dot -Tsvg ./Logs/dot_file > ./Logs/dot_log.svg");
 
 
 
     fopen_s(&out_stream, "./Logs/tex_log.tex", "w");
-    MAIN_CHECK_FUNC(tex_write_subtree, out_stream, cur_node);
+    MAIN_CHECK_FUNC(tex_write_subtree, out_stream, simp_node);
     fclose(out_stream);
 
 
 
     fopen_s(&out_stream, "./Logs/Tree_out", "w");
-    MAIN_CHECK_FUNC(prefix_write_subtree, out_stream, cur_node);
+    MAIN_CHECK_FUNC(prefix_write_subtree, out_stream, simp_node);
     fclose(out_stream);
 
 

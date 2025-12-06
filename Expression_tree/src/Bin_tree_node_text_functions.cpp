@@ -36,7 +36,7 @@ static errno_t str_prefix_read_subtree_from_pos(Bin_tree_node **const dest,
         CHECK_FUNC(new_Bin_tree_node, dest, nullptr, nullptr, Expression_token{});
 
         CHECK_FUNC(skip_spaces, cur_pos_ptr);
-        CHECK_FUNC(My_sscanf_s, 0, *cur_pos_ptr, "%*[^ \f\n\r\t\v(n]%zn", &extra_len); //TODO - I must add n in order to stop before nil
+        CHECK_FUNC(My_sscanf_s, 0, *cur_pos_ptr, "%*[^ \f\n\r\t\v(]%zn", &extra_len);
         if (is_number(*cur_pos_ptr, extra_len)) {
             (*dest)->data.type = EXPRESSION_LITERAL_TYPE;
             CHECK_FUNC(My_sscanf_s, 1, *cur_pos_ptr, "%lG%zn", &(*dest)->data.val.val, &extra_len);
