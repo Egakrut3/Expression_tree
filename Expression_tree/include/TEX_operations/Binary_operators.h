@@ -1,3 +1,5 @@
+//HANDLE_OPERATION(name, tex_decl, left_order, right_order)
+
 HANDLE_OPERATION(ADD, "+",      3, 4)
 HANDLE_OPERATION(SUB, "-",      3, 3)
 

@@ -1,1 +1,2 @@
-sin(ln(x + 2)) * cos(y)$
+(* (sin nil (ln nil (+ ("x" nil nil) (2 nil nil))))
+   (cos nil (y nil nil)))

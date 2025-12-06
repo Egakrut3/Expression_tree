@@ -24,30 +24,30 @@ do {                        \
     FINAL_CODE              \
 } while (false)
 
-#define CHECK_FUNC(func, ...)                       \
-do {                                                \
-    errno = 0;                                      \
-    errno_t err_val = func(__VA_ARGS__);            \
-    if (err_val) {                                  \
-        PRINT_LINE();                               \
-        fprintf_s(stderr, "Code %d: ", err_val);    \
-        perror(#func " failed");                    \
-        CLEAR_RESOURCES();                          \
-        return errno;                               \
-    }                                               \
+#define CHECK_FUNC(func, ...)                           \
+do {                                                    \
+    errno = 0;                                          \
+    errno_t __cur_err_val = func(__VA_ARGS__);          \
+    if (__cur_err_val) {                                \
+        PRINT_LINE();                                   \
+        fprintf_s(stderr, "Code %d: ", __cur_err_val);  \
+        perror(#func " failed");                        \
+        CLEAR_RESOURCES();                              \
+        return errno;                                   \
+    }                                                   \
 } while (false)
 
-#define MAIN_CHECK_FUNC(func, ...)                  \
-do {                                                \
-    errno = 0;                                      \
-    errno_t err_val = func(__VA_ARGS__);            \
-    if (err_val) {                                  \
-        PRINT_LINE();                               \
-        fprintf_s(stderr, "Code %d: ", err_val);    \
-        perror(#func " failed");                    \
-        CLEAR_RESOURCES();                          \
-        return 0;                                   \
-    }                                               \
+#define MAIN_CHECK_FUNC(func, ...)                      \
+do {                                                    \
+    errno = 0;                                          \
+    errno_t __cur_err_val = func(__VA_ARGS__);          \
+    if (__cur_err_val) {                                \
+        PRINT_LINE();                                   \
+        fprintf_s(stderr, "Code %d: ", __cur_err_val);  \
+        perror(#func " failed");                        \
+        CLEAR_RESOURCES();                              \
+        return 0;                                       \
+    }                                                   \
 } while (false)
 
 typedef unsigned char byte_elem_t;

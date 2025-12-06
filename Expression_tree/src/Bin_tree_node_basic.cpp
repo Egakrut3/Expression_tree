@@ -4,47 +4,45 @@
 
 errno_t Bin_tree_node_Ctor(Bin_tree_node *const node_ptr,
                            Bin_tree_node *const left, Bin_tree_node *const right,
-                           expression_type const type, expression_val const val) {
+                           Expression_token const data) {
     assert(node_ptr); assert(!node_ptr->is_valid);
 
     node_ptr->left        = left;
     node_ptr->right       = right;
-    node_ptr->type        = type;
-    node_ptr->val         = val;
+    node_ptr->data        = data;
     node_ptr->is_valid    = true;
     node_ptr->verify_used = false;
+
     return 0;
 }
 
-/*
 errno_t new_Bin_tree_node(Bin_tree_node **const dest,
                           Bin_tree_node *const left, Bin_tree_node *const right,
-                          expression_type const type, expression_val const val) {
+                          Expression_token const data) {
     CHECK_FUNC(My_calloc, (void **)dest, 1, sizeof(Bin_tree_node));
-    CHECK_FUNC(Bin_tree_node_Ctor, *dest, left, right, type, val);
+    CHECK_FUNC(Bin_tree_node_Ctor, *dest, left, right, data);
 
     return 0;
 }
-*/
 
-Bin_tree_node *new_Bin_tree_node(Bin_tree_node *const left, Bin_tree_node *const right,
-                                 expression_type const type, expression_val const val,
-                                 errno_t *const err_ptr) {
+Bin_tree_node *DSL_new_Bin_tree_node(Bin_tree_node *const left, Bin_tree_node *const right,
+                                     Expression_token const data,
+                                     errno_t *const err_ptr) {
     assert(err_ptr);
 
     Bin_tree_node *result = nullptr;
     *err_ptr = My_calloc((void **)&result, 1, sizeof(Bin_tree_node));
-    *err_ptr = Bin_tree_node_Ctor(result, left, right, type, val);
-
+    *err_ptr = Bin_tree_node_Ctor(result, left, right, data);
     return result;
 }
 
 errno_t Bin_tree_node_Dtor(Bin_tree_node *const node_ptr) {
     assert(node_ptr); assert(node_ptr->is_valid);
 
-    if (node_ptr->type == EXPRESSION_VARIABLE_TYPE) { free(node_ptr->val.name); }
+    if (node_ptr->data.type == EXPRESSION_NAME_TYPE) { free(node_ptr->data.val.name); }
 
     node_ptr->is_valid = false;
+
     return 0;
 }
 
@@ -96,54 +94,49 @@ errno_t subtree_Dtor(Bin_tree_node *const node_ptr) {
 static uint32_t ptr_hash(void const *const ptr) {
     uint32_t const mlt  = 0X01'00'01'93;
     uint32_t       hash = 0X81'1C'9D'C5;
-
     for (size_t i = 0; i < sizeof(ptr); ++i) {
         hash = (hash ^ (uint32_t)((size_t)ptr >> i * CHAR_BIT & 0XFF)) * mlt;
     }
-
     return hash;
 }
 
 static uint32_t ptr_color(void const *const ptr) {
     uint32_t hash = ptr_hash(ptr);
-
     if ((hash       & 0XFF) +
         (hash >> 8  & 0XFF) +
         (hash >> 16 & 0XFF) / 3 < 0X80) {
         hash = ~hash;
     }
-
     return hash & 0XFF'FF'FF;
 }
 
-static errno_t dot_declare_vertex(FILE *const out_stream, Bin_tree_node const *const cur_node) {
+static errno_t dot_declare_vertex(FILE *const out_stream, Bin_tree_node const *const node_ptr) {
     #define BORDER_COLOR "black"
     #define EMPTY_COLOR  "lightgreen"
 
-    assert(out_stream); assert(cur_node);
+    assert(out_stream); assert(node_ptr);
 
     fprintf_s(out_stream, "\tnode%p [shape = plaintext color = " BORDER_COLOR " style = \"\" "
                                     "label = <<TABLE BORDER=\"0\" CELLBORDER=\"1\" "
                                                     "BGCOLOR=\"#%06X\">"
                                     "<TR><TD COLSPAN=\"2\" PORT=\"top\">[%p]</TD></TR>"
                                     "<TR><TD>is_valid = %d</TD><TD>verify_used = %d</TD></TR>",
-                          cur_node, ptr_color(cur_node),
-                          cur_node,
-                          cur_node->is_valid, cur_node->verify_used);
+                          node_ptr, ptr_color(node_ptr),
+                          node_ptr,
+                          node_ptr->is_valid, node_ptr->verify_used);
 
-    switch (cur_node->type) {
+    switch (node_ptr->data.type) {
         case EXPRESSION_LITERAL_TYPE:
             fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">type = literal</TD></TR>");
-            fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">val = %lG</TD></TR>", cur_node->val.val);
+            fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">val = %lG</TD></TR>", node_ptr->data.val.val);
             break;
 
         case EXPRESSION_OPERATION_TYPE:
             fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">type = operation</TD></TR>");
-
-            switch (cur_node->val.operation) {
-                #define HANDLE_OPERATION(name, text_decl, ...)                                       \
-                case name ## _OPERATION:                                                             \
-                    fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">val = " text_decl "</TD></TR>");    \
+            switch (node_ptr->data.val.operation) {
+                #define HANDLE_OPERATION(name, text_decl, ...)                                          \
+                case name ## _OPERATION:                                                                \
+                    fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">operation = " text_decl "</TD></TR>"); \
                     break;
                 //This include generates cases for all
                 //operations by applying previously declared
@@ -159,9 +152,9 @@ static errno_t dot_declare_vertex(FILE *const out_stream, Bin_tree_node const *c
             }
             break;
 
-        case EXPRESSION_VARIABLE_TYPE:
+        case EXPRESSION_NAME_TYPE:
             fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">type = variable</TD></TR>");
-            fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">val = %s</TD></TR>", cur_node->val.name);
+            fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">name = %s</TD></TR>", node_ptr->data.val.name);
             break;
 
         default:
@@ -169,24 +162,22 @@ static errno_t dot_declare_vertex(FILE *const out_stream, Bin_tree_node const *c
             abort();
     }
 
-    if (cur_node->left) {
+    if (node_ptr->left) {
         fprintf_s(out_stream, "<TR><TD PORT=\"left\" BGCOLOR=\"#%06X\">left = [%p]</TD>",
-                              ptr_color(cur_node->left), cur_node->left);
+                              ptr_color(node_ptr->left), node_ptr->left);
     }
     else {
         fprintf_s(out_stream, "<TR><TD PORT=\"left\" BGCOLOR=\"" EMPTY_COLOR "\">left = nil</TD>");
     }
-
-    if (cur_node->right) {
+    if (node_ptr->right) {
         fprintf_s(out_stream, "<TD PORT=\"right\" BGCOLOR=\"#%06X\">right = [%p]</TD></TR>",
-                              ptr_color(cur_node->right), cur_node->right);
+                              ptr_color(node_ptr->right), node_ptr->right);
     }
     else {
         fprintf_s(out_stream, "<TD PORT=\"right\" BGCOLOR=\"" EMPTY_COLOR "\">right = nil</TD></TR>");
     }
 
-    fprintf_s(out_stream, "</TABLE>>]\n",
-                          cur_node->val);
+    fprintf_s(out_stream, "</TABLE>>]\n");
 
     return 0;
 
@@ -210,7 +201,6 @@ static errno_t subtree_following_dot_dump(FILE *const out_stream, Bin_tree_node 
                               cur_node, cur_node->left);
         CHECK_FUNC(subtree_following_dot_dump, out_stream, cur_node->left);
     }
-
     if(cur_node->right) {
         fprintf_s(out_stream, "\tnode%p:right -> node%p:top"
                               "[color = " RIGHT_ARROW_COLOR "]\n",
@@ -224,7 +214,7 @@ static errno_t subtree_following_dot_dump(FILE *const out_stream, Bin_tree_node 
     #undef RIGHT_ARROW_COLOR
 }
 
-errno_t subtree_dot_dump(FILE *const out_stream, Bin_tree_node const *const cur_node) {
+errno_t subtree_dot_dump(FILE *const out_stream, Bin_tree_node const *const node_ptr) {
     #define BACKGROUND_COLOR  "white"
 
     assert(out_stream);
@@ -236,253 +226,13 @@ errno_t subtree_dot_dump(FILE *const out_stream, Bin_tree_node const *const cur_
     fprintf_s(out_stream, "\tbgcolor = \"" BACKGROUND_COLOR "\"\n");
     fprintf_s(out_stream, "\n");
 
-    CHECK_FUNC(subtree_following_dot_dump, out_stream, cur_node);
+    CHECK_FUNC(subtree_following_dot_dump, out_stream, node_ptr);
 
     fprintf_s(out_stream, "}");
 
     return 0;
 
     #undef BACKGROUND_COLOR
-}
-
-static bool need_left_parenthesize(Bin_tree_node const *const cur_node) {
-    assert(cur_node); assert(cur_node->type == EXPRESSION_OPERATION_TYPE); assert(cur_node->left);
-
-    size_t parent_order = 0,
-           child_order  = 0;
-
-    switch (cur_node->val.operation) {
-        #define HANDLE_OPERATION(name, ...) \
-            case name ## _OPERATION:        \
-                child_order = 0;            \
-                break;
-        //This include generates cases for all
-        //binary and unary functions by applying
-        //previously declared macros HANDLE_OPERATION
-        //to them
-        #include "TEX_operations/Unary_functions.h"
-        #include "TEX_operations/Binary_functions.h"
-        #undef HANDLE_OPERATION
-
-        #define HANDLE_OPERATION(name, tex_decl, left_order, ...)   \
-        case name ## _OPERATION:                                    \
-            parent_order = left_order;                              \
-            break;
-        //This include generates cases for all
-        //binary operators by applying previously declared
-        //macros HANDLE_OPERATION to them
-        #include "TEX_operations/Binary_operators.h"
-        #undef HANDLE_OPERATION
-
-        default:
-            PRINT_LINE();
-            abort();
-    }
-
-    if (cur_node->left->type == EXPRESSION_OPERATION_TYPE) {
-        switch (cur_node->left->val.operation) {
-            #define HANDLE_OPERATION(name, ...) \
-            case name ## _OPERATION:            \
-                child_order = 0;                \
-                break;
-            //This include generates cases for all
-            //binary and unary functions by applying
-            //previously declared macros HANDLE_OPERATION
-            //to them
-            #include "TEX_operations/Unary_functions.h"
-            #include "TEX_operations/Binary_functions.h"
-            #undef HANDLE_OPERATION
-
-            #define HANDLE_OPERATION(name, tex_decl, left_order, ...)   \
-            case name ## _OPERATION:                                    \
-                child_order = left_order;                               \
-                break;
-            //This include generates cases for all
-            //binary operators by applying previously declared
-            //macros HANDLE_OPERATION to them
-            #include "TEX_operations/Binary_operators.h"
-            #undef HANDLE_OPERATION
-
-            default:
-                PRINT_LINE();
-                abort();
-        }
-    }
-    else {
-        child_order = 0;
-    }
-
-    return parent_order < child_order;
-}
-
-static bool need_right_parenthesize(Bin_tree_node const *const cur_node) {
-    assert(cur_node); assert(cur_node->type == EXPRESSION_OPERATION_TYPE); assert(cur_node->right);
-
-    size_t parent_order = 0,
-           child_order  = 0;
-
-    switch (cur_node->val.operation) {
-        #define HANDLE_OPERATION(name, ...) \
-        case name ## _OPERATION:            \
-            child_order = 0;                \
-            break;
-        //This include generates cases for all
-        //binary and unary functions by applying
-        //previously declared macros HANDLE_OPERATION
-        //to them
-        #include "TEX_operations/Unary_functions.h"
-        #include "TEX_operations/Binary_functions.h"
-        #undef HANDLE_OPERATION
-
-        #define HANDLE_OPERATION(name, tex_decl, left_order, right_order, ...)  \
-        case name ## _OPERATION:                                                \
-            parent_order = right_order;                                         \
-            break;
-        //This include generates cases for all
-        //binary operators by applying previously declared
-        //macros HANDLE_OPERATION to them
-        #include "TEX_operations/Binary_operators.h"
-        #undef HANDLE_OPERATION
-
-        default:
-            PRINT_LINE();
-            abort();
-    }
-
-    if (cur_node->right->type == EXPRESSION_OPERATION_TYPE) {
-        switch (cur_node->right->val.operation) {
-            #define HANDLE_OPERATION(name, ...) \
-            case name ## _OPERATION:            \
-                child_order = 0;                \
-                break;
-            //This include generates cases for all
-            //binary and unary functions by applying
-            //previously declared macros HANDLE_OPERATION
-            //to them
-            #include "TEX_operations/Unary_functions.h"
-            #include "TEX_operations/Binary_functions.h"
-            #undef HANDLE_OPERATION
-
-            #define HANDLE_OPERATION(name, tex_decl, right_order, ...)  \
-            case name ## _OPERATION:                                    \
-                child_order = right_order;                              \
-                break;
-            //This include generates cases for all
-            //binary operators by applying previously declared
-            //macros HANDLE_OPERATION to them
-            #include "TEX_operations/Binary_operators.h"
-            #undef HANDLE_OPERATION
-
-            default:
-                PRINT_LINE();
-                abort();
-        }
-    }
-    else {
-        child_order = 0;
-    }
-
-    return parent_order < child_order;
-}
-
-static errno_t subtree_following_tex_dump(FILE *const out_stream, Bin_tree_node const *const cur_node) {
-    assert(out_stream);
-
-    if (!cur_node) { return 0; }
-
-    switch (cur_node->type) {
-        case EXPRESSION_LITERAL_TYPE:
-            assert(!cur_node->left); assert(!cur_node->right);
-            fprintf_s(out_stream, "%lG", cur_node->val.val);
-            break;
-
-        case EXPRESSION_OPERATION_TYPE:
-            switch (cur_node->val.operation) {
-                #define HANDLE_OPERATION(name, tex_decl, ...)                               \
-                case name ##_OPERATION:                                                     \
-                    fprintf_s(out_stream, tex_decl "(");                                    \
-                    CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->right);    \
-                    fprintf_s(out_stream, ")");                                             \
-                    break;
-                //This include generates cases for all
-                //unary functions by applying previously declared
-                //macros HANDLE_OPERATION to them
-                #include "TEX_operations/Unary_functions.h"
-                #undef HANDLE_OPERATION
-
-                #define HANDLE_OPERATION(name, tex_decl, ...)                               \
-                case name ## _OPERATION:                                                    \
-                    fprintf_s(out_stream, tex_decl);                                        \
-                    fprintf_s(out_stream, "{");                                             \
-                    CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->left);     \
-                    fprintf_s(out_stream, "}");                                             \
-                    fprintf_s(out_stream, "{");                                             \
-                    CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->right);    \
-                    fprintf_s(out_stream, "}");                                             \
-                    break;
-                //This include generates cases for all
-                //binary functions by applying previously declared
-                //macros HANDLE_OPERATION to them
-                #include "TEX_operations/Binary_functions.h"
-                #undef HANDLE_OPERATION
-
-                #define HANDLE_OPERATION(name, tex_decl, ...)                                   \
-                case name ## _OPERATION:                                                        \
-                    fprintf_s(out_stream, "{");                                                 \
-                    if (need_left_parenthesize(cur_node)) {                                     \
-                        fprintf_s(out_stream, "(");                                             \
-                        CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->left);     \
-                        fprintf_s(out_stream, ")");                                             \
-                    }                                                                           \
-                    else {                                                                      \
-                        CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->left);     \
-                    }                                                                           \
-                    fprintf_s(out_stream, "}");                                                 \
-                    fprintf_s(out_stream, " " tex_decl " ");                                    \
-                    fprintf_s(out_stream, "{");                                                 \
-                    if (need_right_parenthesize(cur_node)) {                                    \
-                        fprintf_s(out_stream, "(");                                             \
-                        CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->right);    \
-                        fprintf_s(out_stream, ")");                                             \
-                    }                                                                           \
-                    else {                                                                      \
-                        CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node->right);    \
-                    }                                                                           \
-                    fprintf_s(out_stream, "}");                                                 \
-                    break;
-                //This include generates cases for all
-                //binary operators by applying previously declared
-                //macros HANDLE_OPERATION to them
-                #include "TEX_operations/Binary_operators.h"
-                #undef HANDLE_OPERATION
-
-                default:
-                    PRINT_LINE();
-                    abort();
-            }
-            break;
-
-        case EXPRESSION_VARIABLE_TYPE:
-            assert(!cur_node->left); assert(!cur_node->right);
-            fprintf_s(out_stream, "%s", cur_node->val.name);
-            break;
-
-        default:
-            PRINT_LINE();
-            abort();
-    }
-
-    return 0;
-}
-
-errno_t subtree_tex_dump(FILE *const out_stream, Bin_tree_node const *const cur_node) {
-    assert(out_stream);
-
-    fprintf_s(out_stream, "\\documentclass{article}\n\\begin{document}\n$");
-    CHECK_FUNC(subtree_following_tex_dump, out_stream, cur_node);
-    fprintf_s(out_stream, "$\n\\end{document}\n");
-
-    return 0;
 }
 
 #undef FINAL_CODE
