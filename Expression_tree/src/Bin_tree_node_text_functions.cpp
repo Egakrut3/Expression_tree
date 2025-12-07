@@ -15,12 +15,22 @@ static errno_t skip_spaces(char const **const cur_pos_ptr) {
     return 0;
 }
 
-static bool is_number(char const *const cur_pos, size_t const token_size) {
+static errno_t require_character(char const **const cur_pos_ptr, char const c) {
+    assert(cur_pos_ptr); assert(*cur_pos_ptr);
+
+    CHECK_FUNC(skip_spaces, cur_pos_ptr);
+    if (**cur_pos_ptr != c) { return INCORRECT_TREE_INPUT; }
+    *cur_pos_ptr += 1;
+
+    return 0;
+}
+
+static bool is_number(char const *const cur_pos) {
     assert(cur_pos);
 
     char *last_ptr = nullptr;
     strtod(cur_pos, &last_ptr);
-    return last_ptr == cur_pos + token_size;
+    return last_ptr != cur_pos;
 }
 
 static errno_t str_prefix_read_subtree_from_pos(Bin_tree_node **const dest,
@@ -36,8 +46,8 @@ static errno_t str_prefix_read_subtree_from_pos(Bin_tree_node **const dest,
         CHECK_FUNC(new_Bin_tree_node, dest, nullptr, nullptr, Expression_token{});
 
         CHECK_FUNC(skip_spaces, cur_pos_ptr);
-        CHECK_FUNC(My_sscanf_s, 0, *cur_pos_ptr, "%*[^ \f\n\r\t\v(]%zn", &extra_len);
-        if (is_number(*cur_pos_ptr, extra_len)) {
+
+        if (is_number(*cur_pos_ptr)) {
             (*dest)->data.type = EXPRESSION_LITERAL_TYPE;
             CHECK_FUNC(My_sscanf_s, 1, *cur_pos_ptr, "%lG%zn", &(*dest)->data.val.val, &extra_len);
             *cur_pos_ptr += extra_len;
@@ -46,7 +56,7 @@ static errno_t str_prefix_read_subtree_from_pos(Bin_tree_node **const dest,
         else if (!strncmp(*cur_pos_ptr, text_description, strlen(text_description))) {  \
             (*dest)->data.type          = EXPRESSION_OPERATION_TYPE;                    \
             (*dest)->data.val.operation = name ## _OPERATION;                           \
-            *cur_pos_ptr += extra_len;                                                  \
+            *cur_pos_ptr += strlen(text_description);                                   \
         }
         //This include generates branches of
         //detecting and handling text description
@@ -56,6 +66,7 @@ static errno_t str_prefix_read_subtree_from_pos(Bin_tree_node **const dest,
         #include "Text_operations/Unary_functions.h"
         #include "Text_operations/Binary_functions.h"
         #include "Text_operations/Binary_operators.h"
+        #undef HANDLE_OPERATION
         else if (**cur_pos_ptr == '"') {
             *cur_pos_ptr += 1;
 
@@ -66,19 +77,14 @@ static errno_t str_prefix_read_subtree_from_pos(Bin_tree_node **const dest,
             CHECK_FUNC(strncpy_s, (*dest)->data.val.name, extra_len + 1, *cur_pos_ptr, extra_len);
             *cur_pos_ptr += extra_len;
 
-            CHECK_FUNC(skip_spaces, cur_pos_ptr);
-            if (**cur_pos_ptr != '"') { return INCORRECT_TREE_INPUT; }
-            *cur_pos_ptr += 1;
+            CHECK_FUNC(require_character, cur_pos_ptr, '"');
         }
         else { return INCORRECT_TREE_INPUT; }
-        #undef HANDLE_OPERATION
 
         CHECK_FUNC(str_prefix_read_subtree_from_pos, &(*dest)->left,  cur_pos_ptr);
         CHECK_FUNC(str_prefix_read_subtree_from_pos, &(*dest)->right, cur_pos_ptr);
 
-        CHECK_FUNC(skip_spaces, cur_pos_ptr);
-        if (**cur_pos_ptr != ')') { return INCORRECT_TREE_INPUT; }
-        *cur_pos_ptr += 1;
+        CHECK_FUNC(require_character, cur_pos_ptr, ')');
 
         return 0;
     }
@@ -148,7 +154,8 @@ errno_t prefix_write_subtree(FILE *const out_stream, Bin_tree_node *const src) {
     return 0;
 }
 
-//TODO - modify infix-reading
+//TODO - use tokenizator
+
 static errno_t read_N(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
     assert(dest); assert(cur_pos_ptr); assert(*cur_pos_ptr);
 
@@ -172,7 +179,7 @@ static errno_t read_ID(Bin_tree_node **const dest, char const **cur_pos_ptr) {
                                   Expression_token{EXPRESSION_NAME_TYPE, Expression_val{}});
 
     CHECK_FUNC(skip_spaces, cur_pos_ptr);
-    CHECK_FUNC(My_sscanf_s, 1, *cur_pos_ptr, "%*[^ \f\n\r\t\v+-*/,)$]%zn", &extra_len);
+    CHECK_FUNC(My_sscanf_s, 1, *cur_pos_ptr, "%*[^ \f\n\r\t\v+-*/,)$]%zn", &extra_len); //TODO - how to avoid enumeration of all operators
     CHECK_FUNC(My_calloc, (void **)&(*dest)->data.val.name, extra_len + 1, sizeof(*(*dest)->data.val.name));
     CHECK_FUNC(strncpy_s, (*dest)->data.val.name, extra_len + 1, *cur_pos_ptr, extra_len);
     *cur_pos_ptr += extra_len;
@@ -185,7 +192,6 @@ static errno_t read_E(Bin_tree_node **dest, char const **cur_pos_ptr);
 static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
     assert(dest); assert(cur_pos_ptr); assert(*cur_pos_ptr);
 
-    size_t extra_len = 0;
     CHECK_FUNC(skip_spaces, cur_pos_ptr);
 
     if (**cur_pos_ptr == '(') {
@@ -193,12 +199,12 @@ static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos_ptr
 
         CHECK_FUNC(read_E, dest, cur_pos_ptr);
 
-        CHECK_FUNC(skip_spaces, cur_pos_ptr);
-        if (**cur_pos_ptr != ')') { return INCORRECT_TREE_INPUT; }
-        *cur_pos_ptr += 1;
+        CHECK_FUNC(require_character, cur_pos_ptr, ')');
 
         return 0;
     }
+
+    if (is_number(*cur_pos_ptr)) { CHECK_FUNC(read_N, dest, cur_pos_ptr); return 0; }
 
     #define HANDLE_OPERATION(name, text_description, ...)                                                   \
     if (!strncmp(*cur_pos_ptr, text_description, strlen(text_description))) {                               \
@@ -208,15 +214,11 @@ static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos_ptr
                                       Expression_token{EXPRESSION_OPERATION_TYPE,                           \
                                                        Expression_val{.operation = name ## _OPERATION}});   \
                                                                                                             \
-        CHECK_FUNC(skip_spaces, cur_pos_ptr);                                                               \
-        if (**cur_pos_ptr != '(') { return INCORRECT_TREE_INPUT; }                                          \
-        *cur_pos_ptr += 1;                                                                                  \
+        CHECK_FUNC(require_character, cur_pos_ptr, '(');                                                    \
                                                                                                             \
         CHECK_FUNC(read_E, &(*dest)->right, cur_pos_ptr);                                                   \
                                                                                                             \
-        CHECK_FUNC(skip_spaces, cur_pos_ptr);                                                               \
-        if (**cur_pos_ptr != ')') { return INCORRECT_TREE_INPUT; }                                          \
-        *cur_pos_ptr += 1;                                                                                  \
+        CHECK_FUNC(require_character, cur_pos_ptr, ')');                                                    \
                                                                                                             \
         return 0;                                                                                           \
     }
@@ -236,21 +238,15 @@ static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos_ptr
                                       Expression_token{EXPRESSION_OPERATION_TYPE,                           \
                                                        Expression_val{.operation = name ## _OPERATION}});   \
                                                                                                             \
-        CHECK_FUNC(skip_spaces, cur_pos_ptr);                                                               \
-        if (**cur_pos_ptr != '(') { return INCORRECT_TREE_INPUT; }                                          \
-        *cur_pos_ptr += 1;                                                                                  \
+        CHECK_FUNC(require_character, cur_pos_ptr, '(');                                                    \
                                                                                                             \
         CHECK_FUNC(read_E, &(*dest)->left,  cur_pos_ptr);                                                   \
                                                                                                             \
-        CHECK_FUNC(skip_spaces, cur_pos_ptr);                                                               \
-        if (**cur_pos_ptr != ',') { return INCORRECT_TREE_INPUT; }                                          \
-        *cur_pos_ptr += 1;                                                                                  \
+        CHECK_FUNC(require_character, cur_pos_ptr, ',');                                                    \
                                                                                                             \
         CHECK_FUNC(read_E, &(*dest)->right, cur_pos_ptr);                                                   \
                                                                                                             \
-        CHECK_FUNC(skip_spaces, cur_pos_ptr);                                                               \
-        if (**cur_pos_ptr != ')') { return INCORRECT_TREE_INPUT; }                                          \
-        *cur_pos_ptr += 1;                                                                                  \
+        CHECK_FUNC(require_character, cur_pos_ptr, ')');                                                    \
                                                                                                             \
         return 0;                                                                                           \
     }
@@ -262,17 +258,13 @@ static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos_ptr
     #include "Text_operations/Binary_functions.h"
     #undef HANDLE_OPERATION
 
-    CHECK_FUNC(skip_spaces, cur_pos_ptr);
-    CHECK_FUNC(My_sscanf_s, 0, *cur_pos_ptr, "%*[^ \f\n\r\t\v+-*/,)$]%zn", &extra_len); //TODO - I forbid declarations starting with +/-
-    if (is_number(*cur_pos_ptr, extra_len)) { CHECK_FUNC(read_N, dest, cur_pos_ptr); return 0; }
-
-    CHECK_FUNC(read_ID, dest, cur_pos_ptr); //TODO - possible if with INCORRECT_TREE_INPUT
+    CHECK_FUNC(read_ID, dest, cur_pos_ptr);
 
     return 0;
 }
 
 static errno_t read_T(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
-    assert(cur_pos_ptr); assert(*cur_pos_ptr);
+    assert(dest); assert(cur_pos_ptr); assert(*cur_pos_ptr);
 
     CHECK_FUNC(read_P, dest, cur_pos_ptr);
 
@@ -304,7 +296,7 @@ static errno_t read_T(Bin_tree_node **const dest, char const **const cur_pos_ptr
 }
 
 static errno_t read_E(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
-    assert(cur_pos_ptr); assert(*cur_pos_ptr);
+    assert(dest); assert(cur_pos_ptr); assert(*cur_pos_ptr);
 
     CHECK_FUNC(read_T, dest, cur_pos_ptr);
 
@@ -340,9 +332,7 @@ static errno_t read_G(Bin_tree_node **const dest, char const **const cur_pos_ptr
 
     CHECK_FUNC(read_E, dest, cur_pos_ptr);
 
-    CHECK_FUNC(skip_spaces, cur_pos_ptr);
-    if (**cur_pos_ptr != '$') { return INCORRECT_TREE_INPUT; }
-    *cur_pos_ptr += 1;
+    CHECK_FUNC(require_character, cur_pos_ptr, '$');
 
     return 0;
 }

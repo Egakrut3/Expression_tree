@@ -153,7 +153,7 @@ static errno_t dot_declare_vertex(FILE *const out_stream, Bin_tree_node const *c
             break;
 
         case EXPRESSION_NAME_TYPE:
-            fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">type = variable</TD></TR>");
+            fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">type = name</TD></TR>");
             fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">name = %s</TD></TR>", node_ptr->data.val.name);
             break;
 
