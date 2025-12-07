@@ -228,7 +228,7 @@ static errno_t following_tex_write_subtree(FILE *const out_stream, Bin_tree_node
     return 0;
 }
 
-errno_t tex_write_subtree(FILE *const out_stream, Bin_tree_node const *const node_ptr) {
+errno_t tex_write_subtree(FILE *const out_stream, Bin_tree_node const *const node_ptr) { //TODO - 
     assert(out_stream);
 
     fprintf_s(out_stream, "\\documentclass{article}\n\\begin{document}\n$");

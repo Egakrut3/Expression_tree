@@ -72,7 +72,7 @@ errno_t str_prefix_read_subtree(Bin_tree_node **dest, char const *buffer);
 errno_t str_infix_read_subtree(Bin_tree_node **dest, char const *buffer);
 
 errno_t prefix_write_subtree(FILE *out_stream, Bin_tree_node *src);
-errno_t tex_write_subtree(FILE *out_stream, Bin_tree_node const *node_ptr); //TODO - 
+errno_t tex_write_subtree(FILE *out_stream, Bin_tree_node const *node_ptr);
 
 Bin_tree_node *copy_subtree(Bin_tree_node const *src, errno_t *err_ptr);
 Bin_tree_node *differentiate_subtree(Bin_tree_node const *src, errno_t *err_ptr);
