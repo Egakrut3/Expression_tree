@@ -36,8 +36,9 @@ all : prepare $(call make_bin_path, $(OBJ))
 test : all
 	@$(TARGET) --in Tree_in
 
+#TODO - how to avoid -B option always
 prepare :
-	@make -C ./Expression_tree/
+	@make -B -C ./Expression_tree/
 	@mkdir -p $(BIN_DIR) ./Logs/
 
 $(call make_object, My_functions)

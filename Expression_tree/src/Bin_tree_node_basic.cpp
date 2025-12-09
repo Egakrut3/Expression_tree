@@ -4,7 +4,7 @@
 
 errno_t Bin_tree_node_Ctor(Bin_tree_node *const node_ptr,
                            Bin_tree_node *const left, Bin_tree_node *const right,
-                           Expression_token const data) {
+                           Expression_tree_data const data) {
     assert(node_ptr); assert(!node_ptr->is_valid);
 
     node_ptr->left        = left;
@@ -18,7 +18,7 @@ errno_t Bin_tree_node_Ctor(Bin_tree_node *const node_ptr,
 
 errno_t new_Bin_tree_node(Bin_tree_node **const dest,
                           Bin_tree_node *const left, Bin_tree_node *const right,
-                          Expression_token const data) {
+                          Expression_tree_data const data) {
     CHECK_FUNC(My_calloc, (void **)dest, 1, sizeof(Bin_tree_node));
     CHECK_FUNC(Bin_tree_node_Ctor, *dest, left, right, data);
 
@@ -26,7 +26,7 @@ errno_t new_Bin_tree_node(Bin_tree_node **const dest,
 }
 
 Bin_tree_node *DSL_new_Bin_tree_node(Bin_tree_node *const left, Bin_tree_node *const right,
-                                     Expression_token const data,
+                                     Expression_tree_data const data,
                                      errno_t *const err_ptr) {
     assert(err_ptr);
 
@@ -39,14 +39,14 @@ Bin_tree_node *DSL_new_Bin_tree_node(Bin_tree_node *const left, Bin_tree_node *c
 errno_t Bin_tree_node_Dtor(Bin_tree_node *const node_ptr) {
     assert(node_ptr); assert(node_ptr->is_valid);
 
-    if (node_ptr->data.type == EXPRESSION_NAME_TYPE) { free(node_ptr->data.val.name); }
+    if (node_ptr->data.type == EXPRESSION_TREE_ID_TYPE) { free(node_ptr->data.val.name); }
 
     node_ptr->is_valid = false;
 
     return 0;
 }
 
-errno_t Bin_tree_node_verify(Bin_tree_node const *const node_ptr, errno_t *const err_ptr) {
+errno_t Bin_tree_node_verify(errno_t *const err_ptr, Bin_tree_node const *const node_ptr) {
     assert(node_ptr); assert(err_ptr);
 
     if (!node_ptr->is_valid)   { *err_ptr |= TREE_NODE_INVALID; }
@@ -55,17 +55,17 @@ errno_t Bin_tree_node_verify(Bin_tree_node const *const node_ptr, errno_t *const
     return 0;
 }
 
-errno_t subtree_verify(Bin_tree_node *const node_ptr, errno_t *const err_ptr) {
+errno_t subtree_verify(errno_t *const err_ptr, Bin_tree_node *const node_ptr) {
     assert(err_ptr);
 
     if (!node_ptr) { return 0; }
 
     if (node_ptr->verify_used) { *err_ptr |= TREE_INVALID_STRUCTURE; return 0; }
 
-    CHECK_FUNC(Bin_tree_node_verify, node_ptr, err_ptr);
+    CHECK_FUNC(Bin_tree_node_verify, err_ptr, node_ptr);
     node_ptr->verify_used = true;
-    CHECK_FUNC(subtree_verify, node_ptr->left,  err_ptr);
-    CHECK_FUNC(subtree_verify, node_ptr->right, err_ptr);
+    CHECK_FUNC(subtree_verify, err_ptr, node_ptr->left);
+    CHECK_FUNC(subtree_verify, err_ptr, node_ptr->right);
     node_ptr->verify_used = false;
 
     return 0;
@@ -83,7 +83,7 @@ static errno_t subtree_Dtor_uncheked(Bin_tree_node *const node_ptr) {
 
 errno_t subtree_Dtor(Bin_tree_node *const node_ptr) {
     errno_t verify_err = 0;
-    CHECK_FUNC(Bin_tree_node_verify, node_ptr, &verify_err);
+    CHECK_FUNC(Bin_tree_node_verify, &verify_err, node_ptr);
     if (verify_err) { return verify_err; }
 
     CHECK_FUNC(subtree_Dtor_uncheked, node_ptr);
@@ -126,12 +126,12 @@ static errno_t dot_declare_vertex(FILE *const out_stream, Bin_tree_node const *c
                           node_ptr->is_valid, node_ptr->verify_used);
 
     switch (node_ptr->data.type) {
-        case EXPRESSION_LITERAL_TYPE:
+        case EXPRESSION_TREE_LITERAL_TYPE:
             fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">type = literal</TD></TR>");
             fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">val = %lG</TD></TR>", node_ptr->data.val.val);
             break;
 
-        case EXPRESSION_OPERATION_TYPE:
+        case EXPRESSION_TREE_OPERATION_TYPE:
             fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">type = operation</TD></TR>");
             switch (node_ptr->data.val.operation) {
                 #define HANDLE_OPERATION(name, text_decl, ...)                                          \
@@ -152,7 +152,7 @@ static errno_t dot_declare_vertex(FILE *const out_stream, Bin_tree_node const *c
             }
             break;
 
-        case EXPRESSION_NAME_TYPE:
+        case EXPRESSION_TREE_ID_TYPE:
             fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">type = name</TD></TR>");
             fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">name = %s</TD></TR>", node_ptr->data.val.name);
             break;

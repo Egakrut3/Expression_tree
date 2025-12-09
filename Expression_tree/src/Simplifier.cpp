@@ -10,7 +10,7 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
     errno_t cur_err = 0;
     errno_t *const err_ptr = &cur_err;
 
-    if (src->data.type != EXPRESSION_OPERATION_TYPE) {
+    if (src->data.type != EXPRESSION_TREE_OPERATION_TYPE) {
         assert(!src->left); assert(!src->right);
 
         *dest = COPY(src);
@@ -21,15 +21,15 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
     Bin_tree_node *left_res  = nullptr,
                   *right_res = nullptr;
     switch (src->data.val.operation) {
-        #define HANDLE_OPERATION(name, decl, ...)                   \
-        case name ## _OPERATION:                                    \
-            CHECK_FUNC(simplify_subtree, &right_res, src->right);   \
-            if (right_res->data.type == EXPRESSION_LITERAL_TYPE) {  \
-                *dest = LITER_(decl(right_res->data.val.val));      \
-                CHECK_FUNC(Bin_tree_node_Dtor, right_res);          \
-                right_res = nullptr;                                \
-            }                                                       \
-            else { *dest = name ## _(right_res); }                  \
+        #define HANDLE_OPERATION(name, decl, ...)                       \
+        case name ## _OPERATION:                                        \
+            CHECK_FUNC(simplify_subtree, &right_res, src->right);       \
+            if (right_res->data.type == EXPRESSION_TREE_LITERAL_TYPE) { \
+                *dest = LITER_(decl(right_res->data.val.val));          \
+                CHECK_FUNC(Bin_tree_node_Dtor, right_res);              \
+                right_res = nullptr;                                    \
+            }                                                           \
+            else { *dest = name ## _(right_res); }                      \
             break;
         //This include generates cases for
         //simplifying all existing unary functions
@@ -47,7 +47,7 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
         case name ## _OPERATION:                                                            \
             CHECK_FUNC(simplify_subtree, &left_res,  src->left);                            \
             CHECK_FUNC(simplify_subtree, &right_res, src->right);                           \
-            if (left_res->data.type == EXPRESSION_LITERAL_TYPE) {                           \
+            if (left_res->data.type == EXPRESSION_TREE_LITERAL_TYPE) {                      \
                 if (left_res->data.val.val == left_const_crit) {                            \
                     *dest = LITER_(left_const_res);                                         \
                     CHECK_FUNC(Bin_tree_node_Dtor, left_res);                               \
@@ -60,7 +60,7 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
                     CHECK_FUNC(Bin_tree_node_Dtor, left_res);                               \
                     left_res = nullptr;                                                     \
                 }                                                                           \
-                else if (right_res->data.type == EXPRESSION_LITERAL_TYPE) {                 \
+                else if (right_res->data.type == EXPRESSION_TREE_LITERAL_TYPE) {            \
                     *dest = LITER_(decl(left_res->data.val.val, right_res->data.val.val));  \
                     CHECK_FUNC(Bin_tree_node_Dtor, left_res);                               \
                     CHECK_FUNC(Bin_tree_node_Dtor, right_res);                              \
@@ -69,7 +69,7 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
                 }                                                                           \
                 else { *dest = name ## _(left_res, right_res); }                            \
             }                                                                               \
-            else if (right_res->data.type == EXPRESSION_LITERAL_TYPE) {                     \
+            else if (right_res->data.type == EXPRESSION_TREE_LITERAL_TYPE) {                \
                 if (right_res->data.val.val == right_const_crit) {                          \
                     *dest = LITER_(right_const_res);                                        \
                     CHECK_FUNC(Bin_tree_node_Dtor, left_res);                               \
@@ -103,7 +103,7 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
         case name ## _OPERATION:                                                            \
             CHECK_FUNC(simplify_subtree, &left_res,  src->left);                            \
             CHECK_FUNC(simplify_subtree, &right_res, src->right);                           \
-            if (left_res->data.type == EXPRESSION_LITERAL_TYPE) {                           \
+            if (left_res->data.type == EXPRESSION_TREE_LITERAL_TYPE) {                      \
                 if (left_res->data.val.val == left_const_crit) {                            \
                     *dest = LITER_(left_const_res);                                         \
                     CHECK_FUNC(Bin_tree_node_Dtor, left_res);                               \
@@ -116,7 +116,7 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
                     CHECK_FUNC(Bin_tree_node_Dtor, left_res);                               \
                     left_res = nullptr;                                                     \
                 }                                                                           \
-                else if (right_res->data.type == EXPRESSION_LITERAL_TYPE) {                 \
+                else if (right_res->data.type == EXPRESSION_TREE_LITERAL_TYPE) {            \
                     *dest = LITER_(left_res->data.val.val decl right_res->data.val.val);    \
                     CHECK_FUNC(Bin_tree_node_Dtor, left_res);                               \
                     CHECK_FUNC(Bin_tree_node_Dtor, right_res);                              \
@@ -125,7 +125,7 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
                 }                                                                           \
                 else { *dest = name ## _(left_res, right_res); }                            \
             }                                                                               \
-            else if (right_res->data.type == EXPRESSION_LITERAL_TYPE) {                     \
+            else if (right_res->data.type == EXPRESSION_TREE_LITERAL_TYPE) {                \
                 if (right_res->data.val.val == right_const_crit) {                          \
                     *dest = LITER_(right_const_res);                                        \
                     CHECK_FUNC(Bin_tree_node_Dtor, left_res);                               \
