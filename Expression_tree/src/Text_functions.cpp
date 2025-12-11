@@ -290,30 +290,27 @@ static errno_t read_primary(Bin_tree_node **const dest, char const **const cur_p
     return 0;
 }
 
-static errno_t read_S3(Bin_tree_node **const dest, char const **const cur_pos_ptr) { //TODO - how to read right-to-left
+static errno_t read_S3(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
     assert(dest); assert(cur_pos_ptr); assert(*cur_pos_ptr);
 
     //fprintf_s(stderr, "S3\n%s\n", *cur_pos_ptr);
 
     CHECK_FUNC(read_primary, dest, cur_pos_ptr);
 
-    while (true) {
-        CHECK_FUNC(skip_spaces, cur_pos_ptr);
-        if (**cur_pos_ptr == '^') {
-            *cur_pos_ptr += 1;
+    CHECK_FUNC(skip_spaces, cur_pos_ptr);
+    if (**cur_pos_ptr == '^') {
+        *cur_pos_ptr += 1;
 
-            CHECK_FUNC(new_Bin_tree_node, dest, *dest, nullptr,
-                                          Expression_tree_data{
-                                          EXPRESSION_TREE_OPERATION_TYPE,
-                                          Expression_tree_node_val{.operation = POW_OPERATION}});
+        CHECK_FUNC(new_Bin_tree_node, dest, *dest, nullptr,
+                                      Expression_tree_data{
+                                      EXPRESSION_TREE_OPERATION_TYPE,
+                                      Expression_tree_node_val{.operation = POW_OPERATION}});
 
-            CHECK_FUNC(read_primary, &(*dest)->right, cur_pos_ptr);
-        }
-        else { return 0; }
+        CHECK_FUNC(read_S3, &(*dest)->right, cur_pos_ptr);
+
     }
 
-    PRINT_LINE();
-    abort();
+    return 0;
 }
 
 static errno_t read_S2(Bin_tree_node **const dest, char const **const cur_pos_ptr) {

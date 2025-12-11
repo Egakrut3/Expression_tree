@@ -55,7 +55,7 @@ int main(int const argc, char const *const *const argv) {
 
 
     MAIN_CHECK_FUNC(fopen_s, &out_stream, "./Logs/dot_file", "w");
-    MAIN_CHECK_FUNC(subtree_dot_dump, out_stream, res_node);
+    MAIN_CHECK_FUNC(subtree_dot_dump, out_stream, cur_node);
     fclose(out_stream);
     MAIN_CHECK_FUNC(system, "dot -Tsvg ./Logs/dot_file > ./Logs/dot_log.svg");
 
