@@ -78,7 +78,8 @@ errno_t tex_write_subtree(FILE *out_stream, Bin_tree_node const *cur_node);
 Bin_tree_node *copy_subtree(Bin_tree_node const *src, errno_t *err_ptr);
 Bin_tree_node *subtree_differentiate(Bin_tree_node const *src, char const *main_var,
                                      errno_t *err_ptr);
-errno_t tex_step_differentiate_subtree(FILE *out_stream, Bin_tree_node const *node_ptr,
+errno_t tex_step_differentiate_subtree(FILE *out_stream,
+                                       Bin_tree_node **res_node, Bin_tree_node const *node_ptr,
                                        char const *main_var);
 
 errno_t simplify_subtree(Bin_tree_node **dest, Bin_tree_node const *src);

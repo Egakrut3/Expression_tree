@@ -174,7 +174,7 @@ struct Expression_token {
 //TODO - use tokenizator
 
 
-static errno_t read_N(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
+static errno_t read_number(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
     assert(dest); assert(cur_pos_ptr); assert(*cur_pos_ptr);
 
     //fprintf_s(stderr, "N\n%s\n", *cur_pos_ptr);
@@ -213,7 +213,7 @@ static errno_t read_ID(Bin_tree_node **const dest, char const **cur_pos_ptr) {
 
 static errno_t read_S1(Bin_tree_node **dest, char const **cur_pos_ptr);
 
-static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
+static errno_t read_primary(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
     assert(dest); assert(cur_pos_ptr); assert(*cur_pos_ptr);
 
     //fprintf_s(stderr, "P\n%s\n", *cur_pos_ptr);
@@ -230,7 +230,7 @@ static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos_ptr
         return 0;
     }
 
-    if (is_number(*cur_pos_ptr)) { CHECK_FUNC(read_N, dest, cur_pos_ptr); return 0; }
+    if (is_number(*cur_pos_ptr)) { CHECK_FUNC(read_number, dest, cur_pos_ptr); return 0; }
 
     #define HANDLE_OPERATION(name, text_description, ...)                                           \
     if (!strncmp(*cur_pos_ptr, text_description, strlen(text_description))) {                       \
@@ -296,7 +296,7 @@ static errno_t read_S3(Bin_tree_node **const dest, char const **const cur_pos_pt
 
     //fprintf_s(stderr, "S3\n%s\n", *cur_pos_ptr);
 
-    CHECK_FUNC(read_P, dest, cur_pos_ptr);
+    CHECK_FUNC(read_primary, dest, cur_pos_ptr);
 
     while (true) {
         CHECK_FUNC(skip_spaces, cur_pos_ptr);
@@ -308,7 +308,7 @@ static errno_t read_S3(Bin_tree_node **const dest, char const **const cur_pos_pt
                                           EXPRESSION_TREE_OPERATION_TYPE,
                                           Expression_tree_node_val{.operation = POW_OPERATION}});
 
-            CHECK_FUNC(read_P, &(*dest)->right, cur_pos_ptr);
+            CHECK_FUNC(read_primary, &(*dest)->right, cur_pos_ptr);
         }
         else { return 0; }
     }
