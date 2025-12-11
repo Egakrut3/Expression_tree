@@ -154,7 +154,25 @@ errno_t prefix_write_subtree(FILE *const out_stream, Bin_tree_node const *const 
     return 0;
 }
 
+enum Expression_token_type {
+    TOKEN_LITERAL_TYPE,
+    TOKEN_OPERATOR_TYPE,
+    TOKEN_ID_TYPE,
+};
+
+union Expression_token_val {
+    double                val;
+    Expression_token_type type;
+    char                  *name;
+};
+
+struct Expression_token {
+    Expression_token_type type;
+    Expression_token_val  val;
+};
+
 //TODO - use tokenizator
+
 
 static errno_t read_N(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
     assert(dest); assert(cur_pos_ptr); assert(*cur_pos_ptr);
