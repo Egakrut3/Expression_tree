@@ -42,6 +42,9 @@ int main(int const argc, char const *const *const argv) {
     FILE *out_stream = nullptr;
 
     fopen_s(&out_stream, "./Logs/tex_log.tex", "w");
+    /*
+    MAIN_CHECK_FUNC(tex_write_subtree, out_stream, simp_node);
+    */
 
     printf_s("What variable do you want to differentiate by?\n");
     MAIN_CHECK_FUNC(My_scanf_s, 1, "%s", main_var);
@@ -50,15 +53,12 @@ int main(int const argc, char const *const *const argv) {
 
     fclose(out_stream);
 
+
     MAIN_CHECK_FUNC(fopen_s, &out_stream, "./Logs/dot_file", "w");
     MAIN_CHECK_FUNC(subtree_dot_dump, out_stream, res_node);
     fclose(out_stream);
     MAIN_CHECK_FUNC(system, "dot -Tsvg ./Logs/dot_file > ./Logs/dot_log.svg");
 
-
-    /*
-    MAIN_CHECK_FUNC(tex_write_subtree, out_stream, simp_node);
-    */
 
     /*
     MAIN_CHECK_FUNC(fopen_s, &out_stream, "./Logs/Tree_out", "w");

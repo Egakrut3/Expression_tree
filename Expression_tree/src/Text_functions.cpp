@@ -173,7 +173,6 @@ struct Expression_token {
 
 //TODO - use tokenizator
 
-
 static errno_t read_number(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
     assert(dest); assert(cur_pos_ptr); assert(*cur_pos_ptr);
 
