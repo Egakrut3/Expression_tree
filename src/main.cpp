@@ -72,4 +72,3 @@ int main(int const argc, char const *const *const argv) {
 
     #undef FINAL_CODE
 }
-
