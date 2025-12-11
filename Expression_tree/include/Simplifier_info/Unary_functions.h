@@ -1,4 +1,6 @@
-//HANDLE_OPERATION(name, decl)
+/*
+HANDLE_OPERATION(name, c_decl)
+*/
 
 HANDLE_OPERATION(SIN, sin)
 HANDLE_OPERATION(COS, cos)

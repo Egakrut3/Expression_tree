@@ -80,7 +80,7 @@ static Bin_tree_node *POW_differentiate(Bin_tree_node const *const src, char con
     if (src->left->data.type == EXPRESSION_TREE_LITERAL_TYPE) {
         assert(!src->left->left); assert(!src->left->right);
 
-        return MLT_(MLT_(COPY(src), LN_(src->left)),
+        return MLT_(MLT_(COPY(src), LN_(COPY(src->left))),
                     DIFF(src->right));
     }
 
@@ -91,7 +91,7 @@ static Bin_tree_node *POW_differentiate(Bin_tree_node const *const src, char con
                     DIFF(src->left));
     }
 
-    return MLT_(COPY(src), ADD_(MLT_(DIFF(src->right), LN_(src->left)),
+    return MLT_(COPY(src), ADD_(MLT_(DIFF(src->right), LN_(COPY(src->left))),
                                 MLT_(COPY(src->right), DIV_(DIFF(src->left), COPY(src->left)))));
 }
 
@@ -117,7 +117,7 @@ static Bin_tree_node *COS_differentiate(Bin_tree_node const *const src, char con
 
 Bin_tree_node *subtree_differentiate(Bin_tree_node const *const src, char const *const main_var,
                                      errno_t *const err_ptr) {
-    assert(src);
+    assert(src); assert(main_var);
 
     switch (src->data.type) {
         case EXPRESSION_TREE_LITERAL_TYPE:
@@ -133,9 +133,9 @@ Bin_tree_node *subtree_differentiate(Bin_tree_node const *const src, char const 
                 //This include generates cases for all
                 //operations by applying previously declared
                 //macros HANDLE_OPERATION to them
-                #include "Text_operations/Unary_functions.h"
-                #include "Text_operations/Binary_functions.h"
-                #include "Text_operations/Binary_operators.h"
+                #include "Text_description/Unary_functions.h"
+                #include "Text_description/Binary_functions.h"
+                #include "Text_description/Binary_operators.h"
                 #undef HANDLE_OPERATION
 
                 default:

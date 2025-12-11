@@ -21,7 +21,7 @@ CXX_FLAGS = -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-
 
 TARGET_LIB = $(addprefix $(LIB_DIR), libExpression_tree.a)
 
-OBJ = Bin_tree_node_basic Text_functions Tex_functions Differentiator Simplifier Tex_step_differentiator
+OBJ = Bin_tree_node_basic Text_functions Tex_functions Differentiator Simplifier
 
 make_object = $(call make_bin_path, $(1)) : $(call make_src_path, $(1)); \
 @$(CXX) $(CXX_FLAGS) -c $$< $(addprefix -I, $(H_DIR)) -o $$@
@@ -44,8 +44,6 @@ $(call make_object, Tex_functions)
 $(call make_object, Differentiator)
 
 $(call make_object, Simplifier)
-
-$(call make_object, Tex_step_differentiator)
 
 clean:
 	@rm -rf $(BIN_DIR)

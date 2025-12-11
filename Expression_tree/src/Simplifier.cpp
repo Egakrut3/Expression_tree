@@ -21,11 +21,11 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
     Bin_tree_node *left_res  = nullptr,
                   *right_res = nullptr;
     switch (src->data.val.operation) {
-        #define HANDLE_OPERATION(name, decl, ...)                       \
+        #define HANDLE_OPERATION(name, c_decl, ...)                     \
         case name ## _OPERATION:                                        \
             CHECK_FUNC(simplify_subtree, &right_res, src->right);       \
             if (right_res->data.type == EXPRESSION_TREE_LITERAL_TYPE) { \
-                *dest = LITER_(decl(right_res->data.val.val));          \
+                *dest = LITER_(c_decl(right_res->data.val.val));        \
                 CHECK_FUNC(Bin_tree_node_Dtor, right_res);              \
                 right_res = nullptr;                                    \
             }                                                           \
@@ -41,50 +41,50 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
         #pragma GCC diagnostic pop
         #undef HANDLE_OPERATION
 
-        #define HANDLE_OPERATION(name, decl, left_neutral, right_neutral,                   \
-                                 left_const_crit,  left_const_res,                          \
-                                 right_const_crit, right_const_res, ...)                    \
-        case name ## _OPERATION:                                                            \
-            CHECK_FUNC(simplify_subtree, &left_res,  src->left);                            \
-            CHECK_FUNC(simplify_subtree, &right_res, src->right);                           \
-            if (left_res->data.type == EXPRESSION_TREE_LITERAL_TYPE) {                      \
-                if (left_res->data.val.val == left_const_crit) {                            \
-                    *dest = LITER_(left_const_res);                                         \
-                    CHECK_FUNC(Bin_tree_node_Dtor, left_res);                               \
-                    CHECK_FUNC(Bin_tree_node_Dtor, right_res);                              \
-                    left_res  = nullptr;                                                    \
-                    right_res = nullptr;                                                    \
-                }                                                                           \
-                else if (left_res->data.val.val == left_neutral) {                          \
-                    *dest = right_res;                                                      \
-                    CHECK_FUNC(Bin_tree_node_Dtor, left_res);                               \
-                    left_res = nullptr;                                                     \
-                }                                                                           \
-                else if (right_res->data.type == EXPRESSION_TREE_LITERAL_TYPE) {            \
-                    *dest = LITER_(decl(left_res->data.val.val, right_res->data.val.val));  \
-                    CHECK_FUNC(Bin_tree_node_Dtor, left_res);                               \
-                    CHECK_FUNC(Bin_tree_node_Dtor, right_res);                              \
-                    left_res  = nullptr;                                                    \
-                    right_res = nullptr;                                                    \
-                }                                                                           \
-                else { *dest = name ## _(left_res, right_res); }                            \
-            }                                                                               \
-            else if (right_res->data.type == EXPRESSION_TREE_LITERAL_TYPE) {                \
-                if (right_res->data.val.val == right_const_crit) {                          \
-                    *dest = LITER_(right_const_res);                                        \
-                    CHECK_FUNC(Bin_tree_node_Dtor, left_res);                               \
-                    CHECK_FUNC(Bin_tree_node_Dtor, right_res);                              \
-                    left_res  = nullptr;                                                    \
-                    right_res = nullptr;                                                    \
-                }                                                                           \
-                else if (right_res->data.val.val == right_neutral) {                        \
-                    *dest = left_res;                                                       \
-                    CHECK_FUNC(Bin_tree_node_Dtor, right_res);                              \
-                    right_res = nullptr;                                                    \
-                }                                                                           \
-                else { *dest = name ## _(left_res, right_res); }                            \
-            }                                                                               \
-            else { *dest = name ## _(left_res, right_res); }                                \
+        #define HANDLE_OPERATION(name, c_decl, left_neutral, right_neutral,                     \
+                                 left_const_crit,  left_const_res,                              \
+                                 right_const_crit, right_const_res, ...)                        \
+        case name ## _OPERATION:                                                                \
+            CHECK_FUNC(simplify_subtree, &left_res,  src->left);                                \
+            CHECK_FUNC(simplify_subtree, &right_res, src->right);                               \
+            if (left_res->data.type == EXPRESSION_TREE_LITERAL_TYPE) {                          \
+                if (left_res->data.val.val == left_const_crit) {                                \
+                    *dest = LITER_(left_const_res);                                             \
+                    CHECK_FUNC(Bin_tree_node_Dtor, left_res);                                   \
+                    CHECK_FUNC(Bin_tree_node_Dtor, right_res);                                  \
+                    left_res  = nullptr;                                                        \
+                    right_res = nullptr;                                                        \
+                }                                                                               \
+                else if (left_res->data.val.val == left_neutral) {                              \
+                    *dest = right_res;                                                          \
+                    CHECK_FUNC(Bin_tree_node_Dtor, left_res);                                   \
+                    left_res = nullptr;                                                         \
+                }                                                                               \
+                else if (right_res->data.type == EXPRESSION_TREE_LITERAL_TYPE) {                \
+                    *dest = LITER_(c_decl(left_res->data.val.val, right_res->data.val.val));    \
+                    CHECK_FUNC(Bin_tree_node_Dtor, left_res);                                   \
+                    CHECK_FUNC(Bin_tree_node_Dtor, right_res);                                  \
+                    left_res  = nullptr;                                                        \
+                    right_res = nullptr;                                                        \
+                }                                                                               \
+                else { *dest = name ## _(left_res, right_res); }                                \
+            }                                                                                   \
+            else if (right_res->data.type == EXPRESSION_TREE_LITERAL_TYPE) {                    \
+                if (right_res->data.val.val == right_const_crit) {                              \
+                    *dest = LITER_(right_const_res);                                            \
+                    CHECK_FUNC(Bin_tree_node_Dtor, left_res);                                   \
+                    CHECK_FUNC(Bin_tree_node_Dtor, right_res);                                  \
+                    left_res  = nullptr;                                                        \
+                    right_res = nullptr;                                                        \
+                }                                                                               \
+                else if (right_res->data.val.val == right_neutral) {                            \
+                    *dest = left_res;                                                           \
+                    CHECK_FUNC(Bin_tree_node_Dtor, right_res);                                  \
+                    right_res = nullptr;                                                        \
+                }                                                                               \
+                else { *dest = name ## _(left_res, right_res); }                                \
+            }                                                                                   \
+            else { *dest = name ## _(left_res, right_res); }                                    \
             break;
         //This include generates cases for
         //simplifying all existing binary functions
@@ -97,7 +97,7 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
         #undef HANDLE_OPERATION
 
 
-        #define HANDLE_OPERATION(name, decl, left_neutral, right_neutral,                   \
+        #define HANDLE_OPERATION(name, c_decl, left_neutral, right_neutral,                 \
                                  left_const_crit,  left_const_res,                          \
                                  right_const_crit, right_const_res, ...)                    \
         case name ## _OPERATION:                                                            \
@@ -117,7 +117,7 @@ errno_t simplify_subtree(Bin_tree_node **const dest, Bin_tree_node const *const 
                     left_res = nullptr;                                                     \
                 }                                                                           \
                 else if (right_res->data.type == EXPRESSION_TREE_LITERAL_TYPE) {            \
-                    *dest = LITER_(left_res->data.val.val decl right_res->data.val.val);    \
+                    *dest = LITER_(left_res->data.val.val c_decl right_res->data.val.val);  \
                     CHECK_FUNC(Bin_tree_node_Dtor, left_res);                               \
                     CHECK_FUNC(Bin_tree_node_Dtor, right_res);                              \
                     left_res  = nullptr;                                                    \

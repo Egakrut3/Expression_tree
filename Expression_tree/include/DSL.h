@@ -37,7 +37,6 @@ DSL_new_Bin_tree_node(nullptr, src,                                             
                       Expression_tree_data{EXPRESSION_TREE_OPERATION_TYPE,                          \
                                            Expression_tree_node_val{.operation = LN_OPERATION}},    \
                       err_ptr)
-
 #define POW_(left, right)                                                                           \
 DSL_new_Bin_tree_node(left, right,                                                                  \
                       Expression_tree_data{EXPRESSION_TREE_OPERATION_TYPE,                          \

@@ -63,9 +63,9 @@ static errno_t str_prefix_read_subtree_from_pos(Bin_tree_node **const dest,
         //of all existing operations by applying
         //previously declared macros HANDLE_OPERATION
         //to them
-        #include "Text_operations/Unary_functions.h"
-        #include "Text_operations/Binary_functions.h"
-        #include "Text_operations/Binary_operators.h"
+        #include "Text_description/Unary_functions.h"
+        #include "Text_description/Binary_functions.h"
+        #include "Text_description/Binary_operators.h"
         #undef HANDLE_OPERATION
         else if (**cur_pos_ptr == '"') {
             *cur_pos_ptr += 1;
@@ -127,9 +127,9 @@ errno_t prefix_write_subtree(FILE *const out_stream, Bin_tree_node const *const 
                 //This include generates cases for all
                 //operations by applying previously declared
                 //macros HANDLE_OPERATION to them
-                #include "Text_operations/Unary_functions.h"
-                #include "Text_operations/Binary_functions.h"
-                #include "Text_operations/Binary_operators.h"
+                #include "Text_description/Unary_functions.h"
+                #include "Text_description/Binary_functions.h"
+                #include "Text_description/Binary_operators.h"
                 #undef HANDLE_OPERATION
 
                 default:
@@ -159,6 +159,8 @@ errno_t prefix_write_subtree(FILE *const out_stream, Bin_tree_node const *const 
 static errno_t read_N(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
     assert(dest); assert(cur_pos_ptr); assert(*cur_pos_ptr);
 
+    //fprintf_s(stderr, "N\n%s\n", *cur_pos_ptr);
+
     size_t extra_len = 0;
 
     CHECK_FUNC(new_Bin_tree_node, dest, nullptr, nullptr,
@@ -173,6 +175,8 @@ static errno_t read_N(Bin_tree_node **const dest, char const **const cur_pos_ptr
 
 static errno_t read_ID(Bin_tree_node **const dest, char const **cur_pos_ptr) {
     assert(dest); assert(cur_pos_ptr); assert(*cur_pos_ptr);
+
+    //fprintf_s(stderr, "ID\n%s\n", *cur_pos_ptr);
 
     size_t extra_len = 0;
 
@@ -189,17 +193,19 @@ static errno_t read_ID(Bin_tree_node **const dest, char const **cur_pos_ptr) {
     return 0;
 }
 
-static errno_t read_E(Bin_tree_node **dest, char const **cur_pos_ptr);
+static errno_t read_S1(Bin_tree_node **dest, char const **cur_pos_ptr);
 
 static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
     assert(dest); assert(cur_pos_ptr); assert(*cur_pos_ptr);
+
+    //fprintf_s(stderr, "P\n%s\n", *cur_pos_ptr);
 
     CHECK_FUNC(skip_spaces, cur_pos_ptr);
 
     if (**cur_pos_ptr == '(') {
         *cur_pos_ptr += 1;
 
-        CHECK_FUNC(read_E, dest, cur_pos_ptr);
+        CHECK_FUNC(read_S1, dest, cur_pos_ptr);
 
         CHECK_FUNC(require_character, cur_pos_ptr, ')');
 
@@ -219,7 +225,7 @@ static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos_ptr
                                                                                                     \
         CHECK_FUNC(require_character, cur_pos_ptr, '(');                                            \
                                                                                                     \
-        CHECK_FUNC(read_E, &(*dest)->right, cur_pos_ptr);                                           \
+        CHECK_FUNC(read_S1, &(*dest)->right, cur_pos_ptr);                                          \
                                                                                                     \
         CHECK_FUNC(require_character, cur_pos_ptr, ')');                                            \
                                                                                                     \
@@ -230,7 +236,7 @@ static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos_ptr
     //of unary functions by applying
     //previously declared macros HANDLE_OPERATION
     //to them
-    #include "Text_operations/Unary_functions.h"
+    #include "Text_description/Unary_functions.h"
     #undef HANDLE_OPERATION
 
     #define HANDLE_OPERATION(name, text_description, ...)                                           \
@@ -244,11 +250,11 @@ static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos_ptr
                                                                                                     \
         CHECK_FUNC(require_character, cur_pos_ptr, '(');                                            \
                                                                                                     \
-        CHECK_FUNC(read_E, &(*dest)->left,  cur_pos_ptr);                                           \
+        CHECK_FUNC(read_S1, &(*dest)->left,  cur_pos_ptr);                                          \
                                                                                                     \
         CHECK_FUNC(require_character, cur_pos_ptr, ',');                                            \
                                                                                                     \
-        CHECK_FUNC(read_E, &(*dest)->right, cur_pos_ptr);                                           \
+        CHECK_FUNC(read_S1, &(*dest)->right, cur_pos_ptr);                                          \
                                                                                                     \
         CHECK_FUNC(require_character, cur_pos_ptr, ')');                                            \
                                                                                                     \
@@ -259,7 +265,7 @@ static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos_ptr
     //of binary functions by applying
     //previously declared macros HANDLE_OPERATION
     //to them
-    #include "Text_operations/Binary_functions.h"
+    #include "Text_description/Binary_functions.h"
     #undef HANDLE_OPERATION
 
     CHECK_FUNC(read_ID, dest, cur_pos_ptr);
@@ -267,10 +273,38 @@ static errno_t read_P(Bin_tree_node **const dest, char const **const cur_pos_ptr
     return 0;
 }
 
-static errno_t read_T(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
+static errno_t read_S3(Bin_tree_node **const dest, char const **const cur_pos_ptr) { //TODO - how to read right-to-left
     assert(dest); assert(cur_pos_ptr); assert(*cur_pos_ptr);
 
+    //fprintf_s(stderr, "S3\n%s\n", *cur_pos_ptr);
+
     CHECK_FUNC(read_P, dest, cur_pos_ptr);
+
+    while (true) {
+        CHECK_FUNC(skip_spaces, cur_pos_ptr);
+        if (**cur_pos_ptr == '^') {
+            *cur_pos_ptr += 1;
+
+            CHECK_FUNC(new_Bin_tree_node, dest, *dest, nullptr,
+                                          Expression_tree_data{
+                                          EXPRESSION_TREE_OPERATION_TYPE,
+                                          Expression_tree_node_val{.operation = POW_OPERATION}});
+
+            CHECK_FUNC(read_P, &(*dest)->right, cur_pos_ptr);
+        }
+        else { return 0; }
+    }
+
+    PRINT_LINE();
+    abort();
+}
+
+static errno_t read_S2(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
+    assert(dest); assert(cur_pos_ptr); assert(*cur_pos_ptr);
+
+    //fprintf_s(stderr, "S2\n%s\n", *cur_pos_ptr);
+
+    CHECK_FUNC(read_S3, dest, cur_pos_ptr);
 
     while (true) {
         CHECK_FUNC(skip_spaces, cur_pos_ptr);
@@ -282,7 +316,7 @@ static errno_t read_T(Bin_tree_node **const dest, char const **const cur_pos_ptr
                                           EXPRESSION_TREE_OPERATION_TYPE,
                                           Expression_tree_node_val{.operation = MLT_OPERATION}});
 
-            CHECK_FUNC(read_P, &(*dest)->right, cur_pos_ptr);
+            CHECK_FUNC(read_S3, &(*dest)->right, cur_pos_ptr);
         }
         else if (**cur_pos_ptr == '/') {
             *cur_pos_ptr += 1;
@@ -292,7 +326,7 @@ static errno_t read_T(Bin_tree_node **const dest, char const **const cur_pos_ptr
                                           EXPRESSION_TREE_OPERATION_TYPE,
                                           Expression_tree_node_val{.operation = MLT_OPERATION}});
 
-            CHECK_FUNC(read_P, &(*dest)->right, cur_pos_ptr);
+            CHECK_FUNC(read_S3, &(*dest)->right, cur_pos_ptr);
         }
         else { return 0; }
     }
@@ -301,10 +335,12 @@ static errno_t read_T(Bin_tree_node **const dest, char const **const cur_pos_ptr
     abort();
 }
 
-static errno_t read_E(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
+static errno_t read_S1(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
     assert(dest); assert(cur_pos_ptr); assert(*cur_pos_ptr);
 
-    CHECK_FUNC(read_T, dest, cur_pos_ptr);
+    //fprintf_s(stderr, "S1\n%s\n", *cur_pos_ptr);
+
+    CHECK_FUNC(read_S2, dest, cur_pos_ptr);
 
     while (true) {
         CHECK_FUNC(skip_spaces, cur_pos_ptr);
@@ -316,7 +352,7 @@ static errno_t read_E(Bin_tree_node **const dest, char const **const cur_pos_ptr
                                           EXPRESSION_TREE_OPERATION_TYPE,
                                           Expression_tree_node_val{.operation = ADD_OPERATION}});
 
-            CHECK_FUNC(read_T, &(*dest)->right, cur_pos_ptr);
+            CHECK_FUNC(read_S2, &(*dest)->right, cur_pos_ptr);
         }
         else if (**cur_pos_ptr == '-') {
             *cur_pos_ptr += 1;
@@ -326,7 +362,7 @@ static errno_t read_E(Bin_tree_node **const dest, char const **const cur_pos_ptr
                                           EXPRESSION_TREE_OPERATION_TYPE,
                                           Expression_tree_node_val{.operation = SUB_OPERATION}});
 
-            CHECK_FUNC(read_T, &(*dest)->right, cur_pos_ptr);
+            CHECK_FUNC(read_S2, &(*dest)->right, cur_pos_ptr);
         }
         else { return 0; }
     }
@@ -335,10 +371,12 @@ static errno_t read_E(Bin_tree_node **const dest, char const **const cur_pos_ptr
     abort();
 }
 
-static errno_t read_G(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
+static errno_t read_expression(Bin_tree_node **const dest, char const **const cur_pos_ptr) {
     assert(cur_pos_ptr); assert(*cur_pos_ptr);
 
-    CHECK_FUNC(read_E, dest, cur_pos_ptr);
+    //fprintf_s(stderr, "Expression\n%s\n", *cur_pos_ptr);
+
+    CHECK_FUNC(read_S1, dest, cur_pos_ptr);
 
     CHECK_FUNC(require_character, cur_pos_ptr, '$');
 
@@ -347,7 +385,7 @@ static errno_t read_G(Bin_tree_node **const dest, char const **const cur_pos_ptr
 
 errno_t str_infix_read_subtree(Bin_tree_node **const dest, char const *const buffer) {
     char const *cur_pos_ptr = buffer;
-    CHECK_FUNC(read_G, dest, &cur_pos_ptr);
+    CHECK_FUNC(read_expression, dest, &cur_pos_ptr);
 
     return 0;
 }

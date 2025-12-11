@@ -15,9 +15,9 @@ enum Expression_tree_operation {
     //This includes generates enum-states for all
     //operations by applying previously declared
     //macros HANDLE_OPERATION to them
-    #include "Text_operations/Unary_functions.h"
-    #include "Text_operations/Binary_functions.h"
-    #include "Text_operations/Binary_operators.h"
+    #include "Text_description/Unary_functions.h"
+    #include "Text_description/Binary_functions.h"
+    #include "Text_description/Binary_operators.h"
     #undef HANDLE_OPERATION
 };
 

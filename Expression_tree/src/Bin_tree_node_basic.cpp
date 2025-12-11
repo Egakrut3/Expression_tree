@@ -141,9 +141,9 @@ static errno_t dot_declare_vertex(FILE *const out_stream, Bin_tree_node const *c
                 //This include generates cases for all
                 //operations by applying previously declared
                 //macros HANDLE_OPERATION to them
-                #include "Text_operations/Unary_functions.h"
-                #include "Text_operations/Binary_functions.h"
-                #include "Text_operations/Binary_operators.h"
+                #include "Text_description/Unary_functions.h"
+                #include "Text_description/Binary_functions.h"
+                #include "Text_description/Binary_operators.h"
                 #undef HANDLE_OPERATION
 
                 default:
@@ -154,7 +154,8 @@ static errno_t dot_declare_vertex(FILE *const out_stream, Bin_tree_node const *c
 
         case EXPRESSION_TREE_ID_TYPE:
             fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">type = name</TD></TR>");
-            fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">name = %s</TD></TR>", node_ptr->data.val.name);
+            fprintf_s(out_stream, "<TR><TD COLSPAN=\"2\">name = %s[%p]</TD></TR>", node_ptr->data.val.name,
+                                                                                   node_ptr->data.val.name);
             break;
 
         default:
