@@ -59,11 +59,11 @@ int main(int const argc, char const *const *const argv) {
 
     fclose(out_stream);
 
+    /*
     MAIN_CHECK_FUNC(fopen_s, &out_stream, "./Logs/Tree_out", "w");
-
     MAIN_CHECK_FUNC(prefix_write_subtree, out_stream, cur_node);
-
     fclose(out_stream);
+    */
 
     colored_printf(GREEN, BLACK, "\n\n\nCOMMIT GITHUB\n\n");
     CLEAR_RESOURCES();
