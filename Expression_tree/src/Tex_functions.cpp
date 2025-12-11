@@ -3,17 +3,13 @@
 
 #define FINAL_CODE
 
-static bool need_left_parenthesize(Bin_tree_node const *const node_ptr) {
-    assert(node_ptr); assert(node_ptr->data.type == EXPRESSION_TREE_OPERATION_TYPE); assert(node_ptr->left);
+static size_t get_left_order(Expression_tree_data const cur_data) {
+    if (cur_data.type != EXPRESSION_TREE_OPERATION_TYPE) { return 0; }
 
-    size_t parent_order = 0,
-           child_order  = 0;
-
-    switch (node_ptr->data.val.operation) {
+    switch (cur_data.val.operation) {
         #define HANDLE_OPERATION(name, ...) \
             case name ## _OPERATION:        \
-                child_order = 0;            \
-                break;
+                return 0;
         //This include generates cases for all
         //binary and unary functions by applying
         //previously declared macros HANDLE_OPERATION
@@ -24,8 +20,7 @@ static bool need_left_parenthesize(Bin_tree_node const *const node_ptr) {
 
         #define HANDLE_OPERATION(name, tex_decl, left_order, ...)   \
         case name ## _OPERATION:                                    \
-            parent_order = left_order;                              \
-            break;
+            return left_order;
         //This include generates cases for all
         //binary operators by applying previously declared
         //macros HANDLE_OPERATION to them
@@ -36,52 +31,14 @@ static bool need_left_parenthesize(Bin_tree_node const *const node_ptr) {
             PRINT_LINE();
             abort();
     }
-
-    if (node_ptr->left->data.type == EXPRESSION_TREE_OPERATION_TYPE) {
-        switch (node_ptr->left->data.val.operation) {
-            #define HANDLE_OPERATION(name, ...) \
-            case name ## _OPERATION:            \
-                child_order = 0;                \
-                break;
-            //This include generates cases for all
-            //binary and unary functions by applying
-            //previously declared macros HANDLE_OPERATION
-            //to them
-            #include "Tex_operations/Unary_functions.h"
-            #include "Tex_operations/Binary_functions.h"
-            #undef HANDLE_OPERATION
-
-            #define HANDLE_OPERATION(name, tex_decl, left_order, ...)   \
-            case name ## _OPERATION:                                    \
-                child_order = left_order;                               \
-                break;
-            //This include generates cases for all
-            //binary operators by applying previously declared
-            //macros HANDLE_OPERATION to them
-            #include "Tex_operations/Binary_operators.h"
-            #undef HANDLE_OPERATION
-
-            default:
-                PRINT_LINE();
-                abort();
-        }
-    }
-    else { child_order = 0; }
-
-    return parent_order < child_order;
 }
 
-static bool need_right_parenthesize(Bin_tree_node const *const node_ptr) {
-    assert(node_ptr); assert(node_ptr->data.type == EXPRESSION_TREE_OPERATION_TYPE); assert(node_ptr->right);
-
-    size_t parent_order = 0,
-           child_order  = 0;
-
-    switch (node_ptr->data.val.operation) {
+static size_t get_right_order(Expression_tree_data const cur_data) {
+    if (cur_data.type != EXPRESSION_TREE_OPERATION_TYPE) { return 0; }
+    switch (cur_data.val.operation) {
         #define HANDLE_OPERATION(name, ...) \
-        case name ## _OPERATION:            \
-            child_order = 0;                \
-            break;
+            case name ## _OPERATION:        \
+                return 0;
         //This include generates cases for all
         //binary and unary functions by applying
         //previously declared macros HANDLE_OPERATION
@@ -92,8 +49,7 @@ static bool need_right_parenthesize(Bin_tree_node const *const node_ptr) {
 
         #define HANDLE_OPERATION(name, tex_decl, left_order, right_order, ...)  \
         case name ## _OPERATION:                                                \
-            parent_order = right_order;                                         \
-            break;
+            return right_order;
         //This include generates cases for all
         //binary operators by applying previously declared
         //macros HANDLE_OPERATION to them
@@ -104,39 +60,16 @@ static bool need_right_parenthesize(Bin_tree_node const *const node_ptr) {
             PRINT_LINE();
             abort();
     }
+}
 
-    if (node_ptr->right->data.type == EXPRESSION_TREE_OPERATION_TYPE) {
-        switch (node_ptr->right->data.val.operation) {
-            #define HANDLE_OPERATION(name, ...) \
-            case name ## _OPERATION:            \
-                child_order = 0;                \
-                break;
-            //This include generates cases for all
-            //binary and unary functions by applying
-            //previously declared macros HANDLE_OPERATION
-            //to them
-            #include "Tex_operations/Unary_functions.h"
-            #include "Tex_operations/Binary_functions.h"
-            #undef HANDLE_OPERATION
+static bool need_left_parenthesize(Expression_tree_data const parent_data,
+                                   Expression_tree_data const child_data) {
+    return get_left_order(parent_data) < get_left_order(child_data);
+}
 
-            #define HANDLE_OPERATION(name, tex_decl, right_order, ...)  \
-            case name ## _OPERATION:                                    \
-                child_order = right_order;                              \
-                break;
-            //This include generates cases for all
-            //binary operators by applying previously declared
-            //macros HANDLE_OPERATION to them
-            #include "Tex_operations/Binary_operators.h"
-            #undef HANDLE_OPERATION
-
-            default:
-                PRINT_LINE();
-                abort();
-        }
-    }
-    else { child_order = 0; }
-
-    return parent_order < child_order;
+static bool need_right_parenthesize(Expression_tree_data const parent_data,
+                                   Expression_tree_data const child_data) {
+    return get_right_order(parent_data) < get_right_order(child_data);
 }
 
 errno_t tex_write_subtree(FILE *const out_stream, Bin_tree_node const *const cur_node) {
@@ -181,29 +114,29 @@ errno_t tex_write_subtree(FILE *const out_stream, Bin_tree_node const *const cur
                 #include "Tex_operations/Binary_functions.h"
                 #undef HANDLE_OPERATION
 
-                #define HANDLE_OPERATION(name, tex_decl, ...)                       \
-                case name ## _OPERATION:                                            \
-                    fprintf_s(out_stream, "{");                                     \
-                    if (need_left_parenthesize(cur_node)) {                         \
-                        fprintf_s(out_stream, "\\left(");                           \
-                        CHECK_FUNC(tex_write_subtree, out_stream, cur_node->left);  \
-                        fprintf_s(out_stream, "\\right)");                          \
-                    }                                                               \
-                    else {                                                          \
-                        CHECK_FUNC(tex_write_subtree, out_stream, cur_node->left);  \
-                    }                                                               \
-                    fprintf_s(out_stream, "}");                                     \
-                    fprintf_s(out_stream, " " tex_decl " ");                        \
-                    fprintf_s(out_stream, "{");                                     \
-                    if (need_right_parenthesize(cur_node)) {                        \
-                        fprintf_s(out_stream, "\\left(");                           \
-                        CHECK_FUNC(tex_write_subtree, out_stream, cur_node->right); \
-                        fprintf_s(out_stream, "\\right)");                          \
-                    }                                                               \
-                    else {                                                          \
-                        CHECK_FUNC(tex_write_subtree, out_stream, cur_node->right); \
-                    }                                                               \
-                    fprintf_s(out_stream, "}");                                     \
+                #define HANDLE_OPERATION(name, tex_decl, ...)                               \
+                case name ## _OPERATION:                                                    \
+                    fprintf_s(out_stream, "{");                                             \
+                    if (need_left_parenthesize(cur_node->data, cur_node->left->data)) {     \
+                        fprintf_s(out_stream, "\\left(");                                   \
+                        CHECK_FUNC(tex_write_subtree, out_stream, cur_node->left);          \
+                        fprintf_s(out_stream, "\\right)");                                  \
+                    }                                                                       \
+                    else {                                                                  \
+                        CHECK_FUNC(tex_write_subtree, out_stream, cur_node->left);          \
+                    }                                                                       \
+                    fprintf_s(out_stream, "}");                                             \
+                    fprintf_s(out_stream, " " tex_decl " ");                                \
+                    fprintf_s(out_stream, "{");                                             \
+                    if (need_right_parenthesize(cur_node->data, cur_node->right->data)) {   \
+                        fprintf_s(out_stream, "\\left(");                                   \
+                        CHECK_FUNC(tex_write_subtree, out_stream, cur_node->right);         \
+                        fprintf_s(out_stream, "\\right)");                                  \
+                    }                                                                       \
+                    else {                                                                  \
+                        CHECK_FUNC(tex_write_subtree, out_stream, cur_node->right);         \
+                    }                                                                       \
+                    fprintf_s(out_stream, "}");                                             \
                     break;
                 //This include generates cases for all
                 //binary operators by applying previously declared
@@ -269,7 +202,6 @@ static errno_t parse_derivative_string(FILE *const out_stream,
         *cur_pos_ptr += 1;
 
         CHECK_FUNC(skip_spaces, cur_pos_ptr);
-        size_t cur_order = 0;
         switch (**cur_pos_ptr) {
             #define HANDLE_OPERATION(name, tex_decl, left_order, right_order, der_specifier, ...)       \
             case der_specifier:                                                                         \
@@ -406,39 +338,8 @@ static errno_t parse_derivative_string(FILE *const out_stream,
             case 'c':
                 *cur_pos_ptr += 1;
 
-                if (cur_node->data.type == EXPRESSION_TREE_OPERATION_TYPE) {
-                    switch (cur_node->data.val.operation) {
-                        #define HANDLE_OPERATION(name, ...) \
-                        case name ## _OPERATION:            \
-                            cur_order = 0;                  \
-                            break;
-                        //This include generates cases for all
-                        //binary and unary functions by applying
-                        //previously declared macros HANDLE_OPERATION
-                        //to them
-                        #include "Tex_operations/Unary_functions.h"
-                        #include "Tex_operations/Binary_functions.h"
-                        #undef HANDLE_OPERATION
-
-                        #define HANDLE_OPERATION(name, tex_decl, left_order, right_order, ...)  \
-                        case name ## _OPERATION:                                                \
-                            if (!is_right) { cur_order = left_order; }                          \
-                            else           { cur_order = right_order; }                         \
-                            break;
-                        //This include generates cases for all
-                        //binary operators by applying previously declared
-                        //macros HANDLE_OPERATION to them
-                        #include "Tex_operations/Binary_operators.h"
-                        #undef HANDLE_OPERATION
-
-                        default:
-                            PRINT_LINE();
-                            abort();
-                    }
-                }
-                else { cur_order = 0; }
-
-                if (parent_order < cur_order) {
+                if ((!is_right and parent_order < get_left_order(cur_node->data)) or
+                    (is_right  and parent_order < get_right_order(cur_node->data))) {
                     fprintf_s(out_stream, "\\left(");
                     CHECK_FUNC(tex_write_subtree, out_stream, cur_node);
                     fprintf_s(out_stream, "\\right)");
@@ -451,39 +352,8 @@ static errno_t parse_derivative_string(FILE *const out_stream,
             case 'l':
                 *cur_pos_ptr += 1;
 
-                if (cur_node->left->data.type == EXPRESSION_TREE_OPERATION_TYPE) {
-                    switch (cur_node->left->data.val.operation) {
-                        #define HANDLE_OPERATION(name, ...) \
-                        case name ## _OPERATION:            \
-                            cur_order = 0;                  \
-                            break;
-                        //This include generates cases for all
-                        //binary and unary functions by applying
-                        //previously declared macros HANDLE_OPERATION
-                        //to them
-                        #include "Tex_operations/Unary_functions.h"
-                        #include "Tex_operations/Binary_functions.h"
-                        #undef HANDLE_OPERATION
-
-                        #define HANDLE_OPERATION(name, tex_decl, left_order, right_order, ...)  \
-                        case name ## _OPERATION:                                                \
-                            if (!is_right) { cur_order = left_order; }                          \
-                            else           { cur_order = right_order; }                         \
-                            break;
-                        //This include generates cases for all
-                        //binary operators by applying previously declared
-                        //macros HANDLE_OPERATION to them
-                        #include "Tex_operations/Binary_operators.h"
-                        #undef HANDLE_OPERATION
-
-                        default:
-                            PRINT_LINE();
-                            abort();
-                    }
-                }
-                else { cur_order = 0; }
-
-                if (parent_order < cur_order) {
+                if ((!is_right and parent_order < get_left_order(cur_node->data)) or
+                    (is_right  and parent_order < get_right_order(cur_node->data))) {
                     fprintf_s(out_stream, "\\left(");
                     CHECK_FUNC(tex_write_subtree, out_stream, cur_node->left);
                     fprintf_s(out_stream, "\\right)");
@@ -496,39 +366,8 @@ static errno_t parse_derivative_string(FILE *const out_stream,
             case 'r':
                 *cur_pos_ptr += 1;
 
-                if (cur_node->right->data.type == EXPRESSION_TREE_OPERATION_TYPE) {
-                    switch (cur_node->right->data.val.operation) {
-                        #define HANDLE_OPERATION(name, ...) \
-                        case name ## _OPERATION:            \
-                            cur_order = 0;                  \
-                            break;
-                        //This include generates cases for all
-                        //binary and unary functions by applying
-                        //previously declared macros HANDLE_OPERATION
-                        //to them
-                        #include "Tex_operations/Unary_functions.h"
-                        #include "Tex_operations/Binary_functions.h"
-                        #undef HANDLE_OPERATION
-
-                        #define HANDLE_OPERATION(name, tex_decl, left_order, right_order, ...)  \
-                        case name ## _OPERATION:                                                \
-                            if (!is_right) { cur_order = left_order; }                          \
-                            else           { cur_order = right_order; }                         \
-                            break;
-                        //This include generates cases for all
-                        //binary operators by applying previously declared
-                        //macros HANDLE_OPERATION to them
-                        #include "Tex_operations/Binary_operators.h"
-                        #undef HANDLE_OPERATION
-
-                        default:
-                            PRINT_LINE();
-                            abort();
-                    }
-                }
-                else { cur_order = 0; }
-
-                if (parent_order < cur_order) {
+                if ((!is_right and parent_order < get_left_order(cur_node->data)) or
+                    (is_right  and parent_order < get_right_order(cur_node->data))) {
                     fprintf_s(out_stream, "\\left(");
                     CHECK_FUNC(tex_write_subtree, out_stream, cur_node->right);
                     fprintf_s(out_stream, "\\right)");
