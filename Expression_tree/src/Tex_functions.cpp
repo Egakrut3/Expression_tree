@@ -474,6 +474,153 @@ static errno_t following_tex_step_differentiate_subtree(FILE *const out_stream,
 
                 #define HANDLE_OPERATION(name, der_string, ...)                                                 \
                 case name ## _OPERATION:                                                                        \
+                    if (name ## _OPERATION == POW_OPERATION) {                                                  \
+                        if (node_ptr->left->data.type == EXPRESSION_TREE_LITERAL_TYPE) {                        \
+                            fprintf_s(out_stream, "$");                                                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "{");                                                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "{");                                                         \
+                                                                                                                \
+                            CHECK_FUNC(tex_write_subtree, out_stream, node_ptr);                                \
+                                                                                                                \
+                            fprintf_s(out_stream, "}");                                                         \
+                            fprintf_s(out_stream, " \\cdot ");                                                  \
+                            fprintf_s(out_stream, "{");                                                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "\\ln");                                                      \
+                            fprintf_s(out_stream, "\\left(");                                                   \
+                            CHECK_FUNC(tex_write_subtree, out_stream, node_ptr->left);                          \
+                            fprintf_s(out_stream, "\\right)");                                                  \
+                                                                                                                \
+                            fprintf_s(out_stream, "}");                                                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "}");                                                         \
+                            fprintf_s(out_stream, " \\cdot ");                                                  \
+                            fprintf_s(out_stream, "{");                                                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "\\frac{d}{d%s}", main_var);                                  \
+                            fprintf_s(out_stream, "\\left(");                                                   \
+                            CHECK_FUNC(tex_write_subtree, out_stream, node_ptr->right);                         \
+                            fprintf_s(out_stream, "\\right)");                                                  \
+                                                                                                                \
+                            fprintf_s(out_stream, "}");                                                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "$");                                                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "\n\\\\\n");                                                  \
+                            CHECK_FUNC(following_tex_step_differentiate_subtree, out_stream,                    \
+                                                                                 node_ptr->right, main_var);    \
+                                                                                                                \
+                            dif_node = subtree_differentiate(node_ptr, main_var, &cur_err);                     \
+                            MAIN_CHECK_FUNC(simplify_subtree, &simp_node, dif_node);                            \
+                            CHECK_FUNC(subtree_Dtor, dif_node);                                                 \
+                            dif_node = nullptr;                                                                 \
+                                                                                                                \
+                            fprintf_s(out_stream, "\n\\\\\n");                                                  \
+                            fprintf_s(out_stream, "So we get that:");                                           \
+                            fprintf_s(out_stream, "\n\\\\\n");                                                  \
+                            fprintf_s(out_stream, "$");                                                         \
+                            fprintf_s(out_stream, "\\frac{d}{d%s}", main_var);                                  \
+                            fprintf_s(out_stream, "\\left(");                                                   \
+                            CHECK_FUNC(tex_write_subtree, out_stream, node_ptr);                                \
+                            fprintf_s(out_stream, "\\right)");                                                  \
+                            fprintf_s(out_stream, "$");                                                         \
+                            fprintf_s(out_stream, " = ");                                                       \
+                            fprintf_s(out_stream, "$");                                                         \
+                            CHECK_FUNC(tex_write_subtree, out_stream, simp_node);                               \
+                            fprintf_s(out_stream, "$");                                                         \
+                                                                                                                \
+                            CHECK_FUNC(subtree_Dtor, simp_node);                                                \
+                            simp_node = nullptr;                                                                \
+                            break;                                                                              \
+                        }                                                                                       \
+                                                                                                                \
+                        if (node_ptr->right->data.type == EXPRESSION_TREE_LITERAL_TYPE) {                       \
+                            fprintf_s(out_stream, "$");                                                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "{");                                                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "{");                                                         \
+                                                                                                                \
+                            CHECK_FUNC(tex_write_subtree, out_stream, node_ptr->right);                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "}");                                                         \
+                            fprintf_s(out_stream, " \\cdot ");                                                  \
+                            fprintf_s(out_stream, "{");                                                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "{");                                                         \
+                                                                                                                \
+                            if (need_left_parenthesize(Expression_tree_data{                                    \
+                                                       EXPRESSION_TREE_OPERATION_TYPE,                          \
+                                                       Expression_tree_node_val{.operation = POW_OPERATION}},   \
+                                                       node_ptr->left->data)) {                                 \
+                                fprintf_s(out_stream, "\\left(");                                               \
+                                CHECK_FUNC(tex_write_subtree, out_stream, node_ptr->left);                      \
+                                fprintf_s(out_stream, "\\right)");                                              \
+                            }                                                                                   \
+                            else {                                                                              \
+                                CHECK_FUNC(tex_write_subtree, out_stream, node_ptr->left);                      \
+                            }                                                                                   \
+                                                                                                                \
+                            fprintf_s(out_stream, "}");                                                         \
+                            fprintf_s(out_stream, " ^ ");                                                       \
+                            fprintf_s(out_stream, "{");                                                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "{");                                                         \
+                            CHECK_FUNC(tex_write_subtree, out_stream, node_ptr->right);                         \
+                            fprintf_s(out_stream, "}");                                                         \
+                            fprintf_s(out_stream, " - ");                                                       \
+                            fprintf_s(out_stream, "{");                                                         \
+                            fprintf_s(out_stream, "1");                                                         \
+                            fprintf_s(out_stream, "}");                                                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "}");                                                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "}");                                                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "}");                                                         \
+                            fprintf_s(out_stream, " \\cdot ");                                                  \
+                            fprintf_s(out_stream, "{");                                                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "\\frac{d}{d%s}", main_var);                                  \
+                            fprintf_s(out_stream, "\\left(");                                                   \
+                            CHECK_FUNC(tex_write_subtree, out_stream, node_ptr->left);                          \
+                            fprintf_s(out_stream, "\\right)");                                                  \
+                                                                                                                \
+                            fprintf_s(out_stream, "}");                                                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "$");                                                         \
+                                                                                                                \
+                            fprintf_s(out_stream, "\n\\\\\n");                                                  \
+                            CHECK_FUNC(following_tex_step_differentiate_subtree, out_stream,                    \
+                                                                                 node_ptr->left, main_var);     \
+                                                                                                                \
+                            dif_node = subtree_differentiate(node_ptr, main_var, &cur_err);                     \
+                            MAIN_CHECK_FUNC(simplify_subtree, &simp_node, dif_node);                            \
+                            CHECK_FUNC(subtree_Dtor, dif_node);                                                 \
+                            dif_node = nullptr;                                                                 \
+                                                                                                                \
+                            fprintf_s(out_stream, "\n\\\\\n");                                                  \
+                            fprintf_s(out_stream, "So we get that:");                                           \
+                            fprintf_s(out_stream, "\n\\\\\n");                                                  \
+                            fprintf_s(out_stream, "$");                                                         \
+                            fprintf_s(out_stream, "\\frac{d}{d%s}", main_var);                                  \
+                            fprintf_s(out_stream, "\\left(");                                                   \
+                            CHECK_FUNC(tex_write_subtree, out_stream, node_ptr);                                \
+                            fprintf_s(out_stream, "\\right)");                                                  \
+                            fprintf_s(out_stream, "$");                                                         \
+                            fprintf_s(out_stream, " = ");                                                       \
+                            fprintf_s(out_stream, "$");                                                         \
+                            CHECK_FUNC(tex_write_subtree, out_stream, simp_node);                               \
+                            fprintf_s(out_stream, "$");                                                         \
+                                                                                                                \
+                            CHECK_FUNC(subtree_Dtor, simp_node);                                                \
+                            simp_node = nullptr;                                                                \
+                            break;                                                                              \
+                        }                                                                                       \
+                    }                                                                                           \
+                                                                                                                \
                     fprintf_s(out_stream, "$");                                                                 \
                     cur_pos = der_string;                                                                       \
                     CHECK_FUNC(parse_derivative_string, out_stream, node_ptr, main_var, &cur_pos, -1, true);    \
