@@ -734,7 +734,7 @@ errno_t tex_step_differentiate_subtree(FILE *const out_stream, Bin_tree_node con
     Bin_tree_node *simp_node = nullptr;
     CHECK_FUNC(simplify_subtree, &simp_node, node_ptr);
     fprintf_s(out_stream, "First, let's simplify this. We'll get:");
-    fprintf_s(out_stream, "\n");
+    fprintf_s(out_stream, "\n\\\\\n");
     fprintf_s(out_stream, "$");
     fprintf_s(out_stream, "\\frac{d}{d%s}", main_var);
     fprintf_s(out_stream, "\\left(");
