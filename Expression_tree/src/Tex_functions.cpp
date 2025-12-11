@@ -399,8 +399,6 @@ static errno_t parse_derivative_string(FILE *const out_stream,
     abort();
 }
 
-//TODO - make POW differentiate
-
 static errno_t following_tex_step_differentiate_subtree(FILE *const out_stream,
                                                         Bin_tree_node const *const node_ptr,
                                                         char const *const main_var) {

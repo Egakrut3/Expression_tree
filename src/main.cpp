@@ -28,23 +28,24 @@ int main(int const argc, char const *const *const argv) {
     MAIN_CHECK_FUNC(str_prefix_read_subtree, &cur_node, buffer);
     */
 
-
-
+    size_t const MAIN_VAR_MAX_LEN = 10;
+    char main_var[MAIN_VAR_MAX_LEN + 1];
     /*
+    printf_s("What variable do you want to differentiate by?\n");
+    scanf_s("%s", main_var);
     errno_t cur_err = 0;
-    Bin_tree_node *dif_node  = subtree_differentiate(cur_node, "x", &cur_err), //TODO -
+    Bin_tree_node *dif_node  = subtree_differentiate(cur_node, main_var, &cur_err),
                   *simp_node = nullptr;
     MAIN_CHECK_FUNC(simplify_subtree, &simp_node, dif_node);
     */
 
 
-
-
     FILE *out_stream = nullptr;
-    fopen_s(&out_stream, "./Logs/dot_file", "w");
+    MAIN_CHECK_FUNC(fopen_s, &out_stream, "./Logs/dot_file", "w");
     MAIN_CHECK_FUNC(subtree_dot_dump, out_stream, cur_node);
     fclose(out_stream);
     MAIN_CHECK_FUNC(system, "dot -Tsvg ./Logs/dot_file > ./Logs/dot_log.svg");
+
 
 
     fopen_s(&out_stream, "./Logs/tex_log.tex", "w");
@@ -52,19 +53,17 @@ int main(int const argc, char const *const *const argv) {
     MAIN_CHECK_FUNC(tex_write_subtree, out_stream, simp_node);
     */
 
-    MAIN_CHECK_FUNC(tex_step_differentiate_subtree, out_stream, cur_node, "x");
+    printf_s("What variable do you want to differentiate by?\n");
+    MAIN_CHECK_FUNC(My_scanf_s, 1, "%s", main_var);
+    MAIN_CHECK_FUNC(tex_step_differentiate_subtree, out_stream, cur_node, main_var);
 
     fclose(out_stream);
 
-
-
-
-    fopen_s(&out_stream, "./Logs/Tree_out", "w");
+    MAIN_CHECK_FUNC(fopen_s, &out_stream, "./Logs/Tree_out", "w");
 
     MAIN_CHECK_FUNC(prefix_write_subtree, out_stream, cur_node);
 
     fclose(out_stream);
-
 
     colored_printf(GREEN, BLACK, "\n\n\nCOMMIT GITHUB\n\n");
     CLEAR_RESOURCES();
